@@ -1,3 +1,4 @@
+import { MoreHorizontal } from "lucide-react";
 import { notFound } from "next/navigation";
 import { CaseStatusBadge } from "@/components/case-status-badge";
 import { NavLink } from "@/components/nav-link";
@@ -29,23 +30,34 @@ export default async function CaseLayout({
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="flex items-start justify-between border-b px-6 py-4">
-        <div>
-          <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
-            {cb?.primary_owner_name ?? "Unassigned owner"}
-          </p>
-          <h1 className="text-lg font-medium">
-            {cb?.business_name ?? "—"}
-            {cb?.domain && (
-              <span className="ml-2 text-sm text-muted-foreground">
-                {cb.domain}
-              </span>
+      <header className="border-b px-8 pt-7 pb-5">
+        <div className="flex items-start justify-between gap-6">
+          <div className="min-w-0 space-y-1.5">
+            {cb?.primary_owner_name && (
+              <p className="text-[10px] tracking-[0.22em] text-muted-foreground uppercase">
+                {cb.primary_owner_name}
+              </p>
             )}
-          </h1>
+            <h1 className="font-display text-[28px] leading-tight font-medium tracking-tight">
+              {cb?.business_name ?? "Unnamed business"}
+            </h1>
+            {cb?.domain && (
+              <p className="text-sm text-muted-foreground">{cb.domain}</p>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-3">
+            <CaseStatusBadge status={caseRow.status} />
+            <button
+              type="button"
+              aria-label="More actions"
+              className="flex h-8 w-8 items-center justify-center rounded-md border text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+          </div>
         </div>
-        <CaseStatusBadge status={caseRow.status} />
-      </div>
-      <nav className="flex items-center gap-6 border-b px-6 py-2 text-sm">
+      </header>
+      <nav className="flex items-center gap-9 border-b px-8">
         <NavLink href={`/app/cases/${id}/valuation`}>Valuation</NavLink>
         <NavLink href={`/app/cases/${id}/risk`}>Risk</NavLink>
         <NavLink href={`/app/cases/${id}/wealth`}>Wealth</NavLink>

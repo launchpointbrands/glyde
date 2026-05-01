@@ -13,17 +13,19 @@ export default async function CasesPage() {
 
   if (!cases || cases.length === 0) {
     return (
-      <main className="flex flex-1 items-center justify-center px-8">
+      <main className="flex flex-1 items-center justify-center px-8 py-16">
         <div className="max-w-md space-y-6 text-center">
-          <h1 className="text-2xl font-medium">Start with a client.</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="font-display text-[36px] leading-tight font-medium tracking-tight">
+            Start with a client.
+          </h1>
+          <p className="text-[15px] leading-relaxed text-muted-foreground">
             Drop in a business domain and you&apos;ll have valuation, risk,
             and exit-readiness ready before your next meeting with them.
           </p>
-          <div className="space-y-3">
+          <div className="space-y-3 pt-2">
             <Link
               href="/app/cases/new"
-              className="inline-block rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+              className="inline-block rounded-md bg-ink-teal px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
             >
               Add a business
             </Link>
@@ -42,18 +44,25 @@ export default async function CasesPage() {
   }
 
   return (
-    <main className="flex flex-1 flex-col px-6 py-8">
+    <main className="flex flex-1 flex-col px-8 pt-9 pb-12">
       <div className="mx-auto w-full max-w-3xl">
-        <div className="mb-6 flex items-baseline justify-between">
-          <h1 className="text-xl font-medium">Clients</h1>
+        <div className="mb-8 flex items-end justify-between gap-6">
+          <div className="space-y-1.5">
+            <p className="text-[10px] tracking-[0.22em] text-muted-foreground uppercase">
+              Your book
+            </p>
+            <h1 className="font-display text-[32px] leading-tight font-medium tracking-tight">
+              Clients
+            </h1>
+          </div>
           <Link
             href="/app/cases/new"
-            className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+            className="rounded-md bg-ink-teal px-3.5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
           >
             Add a business
           </Link>
         </div>
-        <ul className="border-t border-b divide-y">
+        <ul className="divide-y border-t border-b">
           {cases.map((c) => {
             const cb = Array.isArray(c.client_business)
               ? c.client_business[0]
@@ -62,17 +71,19 @@ export default async function CasesPage() {
               <li key={c.id}>
                 <Link
                   href={`/app/cases/${c.id}`}
-                  className="flex items-baseline justify-between px-2 py-3 hover:bg-muted/30"
+                  className="flex items-center justify-between px-2 py-4 transition-colors hover:bg-muted/30"
                 >
-                  <div>
-                    <p className="text-sm font-medium">
+                  <div className="min-w-0">
+                    <p className="truncate text-[15px] font-medium">
                       {cb?.business_name ?? "Unknown business"}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="truncate text-xs text-muted-foreground">
                       {cb?.domain ?? ""}
                     </p>
                   </div>
-                  <p className="text-xs text-muted-foreground">{c.status}</p>
+                  <p className="ml-4 shrink-0 text-[10px] tracking-[0.18em] text-muted-foreground uppercase">
+                    {c.status.replace("_", " ")}
+                  </p>
                 </Link>
               </li>
             );

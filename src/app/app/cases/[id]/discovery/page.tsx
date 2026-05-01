@@ -1,12 +1,13 @@
+import { Compass } from "lucide-react";
+import { ModulePlaceholder } from "@/components/module-placeholder";
+
 export default function DiscoveryPage() {
   return (
-    <main className="flex flex-1 items-center justify-center px-8">
-      <div className="max-w-md space-y-2 text-center">
-        <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
-          Discovery
-        </p>
-        <p className="text-sm text-muted-foreground">Coming soon.</p>
-      </div>
-    </main>
+    <ModulePlaceholder
+      eyebrow="Module"
+      title="Discovery"
+      description="The discovery answers captured for this client will appear here."
+      icon={<Compass className="h-5 w-5" />}
+    />
   );
 }

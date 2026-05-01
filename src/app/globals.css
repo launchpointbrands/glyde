@@ -7,9 +7,13 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-ink-teal: var(--glyde-ink-teal);
+  --color-oxblood: var(--glyde-oxblood);
+  --color-ochre: var(--glyde-ochre);
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
+  --font-heading: var(--font-display);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,6 +53,13 @@
 }
 
 :root {
+  /* Glyde brand tokens — keep accent and severity strictly separate.
+     Accent = ink-teal (CTAs, key emphasis).
+     Severity = oxblood (high), ochre (moderate), no color (low). */
+  --glyde-ink-teal: oklch(0.32 0.08 200);
+  --glyde-oxblood:  oklch(0.38 0.13 25);
+  --glyde-ochre:    oklch(0.65 0.13 70);
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -73,13 +84,15 @@
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
+  /* Sidebar surface: subtle warm off-white (NOT gray) to differentiate
+     from the pure-white main content area. */
+  --sidebar: oklch(0.985 0.005 80);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent: oklch(0.96 0.01 80);
   --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-border: oklch(0.91 0.005 80);
   --sidebar-ring: oklch(0.708 0 0);
 }
 
