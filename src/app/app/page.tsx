@@ -45,12 +45,12 @@ export default async function CasesPage() {
     <main className="flex flex-1 flex-col px-6 py-8">
       <div className="mx-auto w-full max-w-3xl">
         <div className="mb-6 flex items-baseline justify-between">
-          <h1 className="text-xl font-medium">Cases</h1>
+          <h1 className="text-xl font-medium">Clients</h1>
           <Link
             href="/app/cases/new"
             className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
           >
-            New case
+            Add a business
           </Link>
         </div>
         <ul className="border-t border-b divide-y">
