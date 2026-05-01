@@ -1,4 +1,5 @@
 import { signOut } from "@/lib/auth";
+import { seedDemoCase } from "@/lib/demo";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function SettingsPage() {
@@ -35,14 +36,24 @@ export default async function SettingsPage() {
           <dt className="text-muted-foreground">Role</dt>
           <dd>{advisor?.role ?? "—"}</dd>
         </dl>
-        <form action={signOut}>
-          <button
-            type="submit"
-            className="rounded-md border px-3 py-2 text-sm hover:bg-muted/30"
-          >
-            Sign out
-          </button>
-        </form>
+        <div className="flex items-center gap-3 pt-2">
+          <form action={seedDemoCase}>
+            <button
+              type="submit"
+              className="rounded-md border px-3 py-2 text-sm hover:bg-muted/30"
+            >
+              Load demo case
+            </button>
+          </form>
+          <form action={signOut}>
+            <button
+              type="submit"
+              className="rounded-md border px-3 py-2 text-sm hover:bg-muted/30"
+            >
+              Sign out
+            </button>
+          </form>
+        </div>
       </div>
     </main>
   );
