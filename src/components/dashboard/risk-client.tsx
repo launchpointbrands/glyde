@@ -191,36 +191,53 @@ function TabbedFactorTable({
   );
 
   return (
-    <div className="overflow-hidden rounded-[10px] border border-border-subtle bg-bg-card shadow-card">
-      <div className="flex items-center gap-6 border-b border-border-subtle px-5">
-        <TabButton
-          active={tab === "all"}
-          onClick={() => setTab("all")}
-          label="All factors"
-          count={counts.all}
-          variant="neutral"
-        />
-        <TabButton
-          active={tab === "high"}
-          onClick={() => setTab("high")}
-          label="High"
-          count={counts.high}
-          variant="danger"
-        />
-        <TabButton
-          active={tab === "moderate"}
-          onClick={() => setTab("moderate")}
-          label="Moderate"
-          count={counts.moderate}
-          variant="warning"
-        />
-        <TabButton
-          active={tab === "low"}
-          onClick={() => setTab("low")}
-          label="Low"
-          count={counts.low}
-          variant="success"
-        />
+    <div className="mb-8 overflow-hidden rounded-[10px] border border-border-subtle bg-bg-card shadow-card">
+      <div className="border-b border-border-subtle">
+        <div className="flex items-center gap-6 px-5 pt-3">
+          <TabButton
+            active={tab === "all"}
+            onClick={() => setTab("all")}
+            label="All factors"
+            count={counts.all}
+            variant="neutral"
+          />
+          <TabButton
+            active={tab === "high"}
+            onClick={() => setTab("high")}
+            label="High"
+            count={counts.high}
+            variant="danger"
+          />
+          <TabButton
+            active={tab === "moderate"}
+            onClick={() => setTab("moderate")}
+            label="Moderate"
+            count={counts.moderate}
+            variant="warning"
+          />
+          <TabButton
+            active={tab === "low"}
+            onClick={() => setTab("low")}
+            label="Low"
+            count={counts.low}
+            variant="success"
+          />
+        </div>
+        <div className="flex items-center gap-4 px-5 py-3">
+          <div className="w-[220px] shrink-0">
+            <ColHeader>Risk Factor</ColHeader>
+          </div>
+          <div className="w-[100px] shrink-0">
+            <ColHeader>Severity</ColHeader>
+          </div>
+          <div className="min-w-0 flex-1">
+            <ColHeader>Recommended Action</ColHeader>
+          </div>
+          <div className="w-[200px] shrink-0 text-right">
+            <ColHeader>Discovery Signal</ColHeader>
+          </div>
+          <div className="w-8 shrink-0" />
+        </div>
       </div>
 
       <div>
@@ -235,6 +252,14 @@ function TabbedFactorTable({
         ))}
       </div>
     </div>
+  );
+}
+
+function ColHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[11px] font-medium uppercase tracking-[0.05em] text-text-tertiary">
+      {children}
+    </p>
   );
 }
 
@@ -310,41 +335,47 @@ function FactorTableRow({
         type="button"
         onClick={onToggle}
         aria-expanded={isOpen}
-        className="flex w-full items-start gap-4 px-5 py-3.5 text-left transition-colors hover:bg-bg-hover"
+        className="flex w-full items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-bg-hover"
       >
-        <div className="w-[180px] shrink-0">
-          <p className="text-meta text-text-secondary">{f.label}</p>
-          <div className="mt-1.5 flex items-center gap-2">
+        <div className="w-[220px] shrink-0">
+          <p className="text-meta font-medium text-text-primary">{f.label}</p>
+        </div>
+        <div className="w-[100px] shrink-0">
+          <div className="flex items-center gap-2">
             <span
               className={`inline-block h-3.5 w-[3px] rounded-[2px] ${barTone}`}
               aria-hidden
             />
-            <span className={`text-meta font-medium capitalize ${tone}`}>
+            <span className={`text-[12px] font-medium capitalize ${tone}`}>
               {f.severity}
             </span>
           </div>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-meta font-medium text-text-primary">
+          <p className="text-meta font-normal text-text-primary">
             {f.headline}
           </p>
+        </div>
+        <div className="w-[200px] shrink-0 text-right">
           {signalText && (
-            <p className="mt-1 text-eyebrow uppercase text-text-tertiary">
+            <p className="text-[12px] uppercase tracking-[0.05em] text-text-tertiary">
               {signalText}
             </p>
           )}
         </div>
-        <ChevronRight
-          className={`mt-0.5 h-4 w-4 shrink-0 text-text-tertiary transition-transform ${
-            isOpen ? "rotate-90" : ""
-          }`}
-          aria-hidden
-        />
+        <div className="flex w-8 shrink-0 items-center justify-end">
+          <ChevronRight
+            className={`h-4 w-4 text-text-tertiary transition-transform ${
+              isOpen ? "rotate-90" : ""
+            }`}
+            aria-hidden
+          />
+        </div>
       </button>
 
       {isOpen && (
         <div className="px-5 pb-4 pt-1">
-          <p className="ml-[196px] max-w-2xl text-meta text-text-secondary">
+          <p className="max-w-2xl text-meta text-text-secondary">
             {f.explanation}
           </p>
         </div>
