@@ -88,7 +88,7 @@ export default async function ValuationPage({
   const isDemo = caseRow?.label === "demo";
 
   return (
-    <main className="flex flex-1 flex-col px-10 pt-10 pb-16">
+    <main className="flex flex-1 flex-col px-5 pt-8 pb-12 md:px-10 md:pt-10 md:pb-16">
       <div className="mx-auto w-full max-w-[1100px]">
         <PageHeader title="Business Valuation Report" />
 
@@ -267,7 +267,8 @@ export default async function ValuationPage({
               <h2 className="text-section font-medium text-text-primary">
                 Profit &amp; Loss data
               </h2>
-              <table className="mt-6 w-full">
+              <div className="mt-6 -mx-7 overflow-x-auto px-7 md:mx-0 md:px-0">
+                <table className="w-full min-w-[520px]">
                 <thead>
                   <tr className="text-meta text-text-primary">
                     <th />
@@ -310,7 +311,8 @@ export default async function ValuationPage({
                     </td>
                   </tr>
                 </tbody>
-              </table>
+                </table>
+              </div>
               <p className="mt-3 max-w-2xl text-meta text-text-secondary">
                 An estimate of the business&apos;s ability to generate
                 earnings before interest, taxes, depreciation, and

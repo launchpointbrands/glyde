@@ -107,7 +107,7 @@ export default async function CasesPage() {
   }
 
   return (
-    <main className="flex flex-1 flex-col px-10 pt-9 pb-12">
+    <main className="flex flex-1 flex-col px-5 pt-7 pb-10 md:px-10 md:pt-9 md:pb-12">
       <div className="mx-auto w-full max-w-[960px]">
         <div className="mb-7 flex items-end justify-between gap-6">
           <div className="space-y-1.5">
@@ -168,13 +168,13 @@ export default async function CasesPage() {
                       </p>
                     )}
                     {domain && (
-                      <p className="truncate text-meta text-text-tertiary">
+                      <p className="hidden truncate text-meta text-text-tertiary md:block">
                         {domain}
                       </p>
                     )}
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-5">
+                  <div className="hidden shrink-0 items-center gap-5 md:flex">
                     <span className="inline-flex items-center gap-1.5 font-mono text-meta tabular-nums">
                       <DiscoveryArc
                         count={dCount}

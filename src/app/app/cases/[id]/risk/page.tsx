@@ -57,7 +57,7 @@ export default async function RiskPage({
     BUY_SELL_SEVERITY[buySellStatus] ?? ("moderate" as Severity);
 
   return (
-    <main className="flex flex-1 flex-col px-10 pt-10 pb-16">
+    <main className="flex flex-1 flex-col px-5 pt-8 pb-12 md:px-10 md:pt-10 md:pb-16">
       <div className="mx-auto w-full max-w-[1100px]">
         <PageHeader
           title="Business Risk Assessment"

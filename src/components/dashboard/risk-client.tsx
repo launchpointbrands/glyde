@@ -222,64 +222,70 @@ function TabbedFactorTable({
 
   return (
     <div className="mb-8 overflow-hidden rounded-[10px] border border-border-subtle bg-bg-card shadow-card">
-      <div className="border-b border-border-subtle">
-        <div className="flex items-center gap-6 px-5 pt-3">
-          <TabButton
-            active={tab === "all"}
-            onClick={() => setTab("all")}
-            label="All factors"
-            count={counts.all}
-            variant="neutral"
-          />
-          <TabButton
-            active={tab === "high"}
-            onClick={() => setTab("high")}
-            label="High"
-            count={counts.high}
-            variant="danger"
-          />
-          <TabButton
-            active={tab === "moderate"}
-            onClick={() => setTab("moderate")}
-            label="Moderate"
-            count={counts.moderate}
-            variant="warning"
-          />
-          <TabButton
-            active={tab === "low"}
-            onClick={() => setTab("low")}
-            label="Low"
-            count={counts.low}
-            variant="success"
-          />
-        </div>
-        <div className="flex items-center gap-4 px-5 py-3">
-          <div className="w-[220px] shrink-0">
-            <ColHeader>Risk Factor</ColHeader>
-          </div>
-          <div className="w-[100px] shrink-0">
-            <ColHeader>Severity</ColHeader>
-          </div>
-          <div className="min-w-0 flex-1">
-            <ColHeader>Recommended Action</ColHeader>
-          </div>
-          <div className="w-[200px] shrink-0 text-right">
-            <ColHeader>Discovery Signal</ColHeader>
-          </div>
-          <div className="w-8 shrink-0" />
-        </div>
+      {/* Tabs — full-width, never scroll */}
+      <div className="flex items-center gap-6 border-b border-border-subtle px-5 pt-3">
+        <TabButton
+          active={tab === "all"}
+          onClick={() => setTab("all")}
+          label="All factors"
+          count={counts.all}
+          variant="neutral"
+        />
+        <TabButton
+          active={tab === "high"}
+          onClick={() => setTab("high")}
+          label="High"
+          count={counts.high}
+          variant="danger"
+        />
+        <TabButton
+          active={tab === "moderate"}
+          onClick={() => setTab("moderate")}
+          label="Moderate"
+          count={counts.moderate}
+          variant="warning"
+        />
+        <TabButton
+          active={tab === "low"}
+          onClick={() => setTab("low")}
+          label="Low"
+          count={counts.low}
+          variant="success"
+        />
       </div>
 
-      <div>
-        {sorted.map((f, i) => (
-          <FactorTableRow
-            key={f.key}
-            factor={f}
-            isOpen={openKey === f.key}
-            isLast={i === sorted.length - 1}
-            onToggle={() => onToggle(f.key)}
-          />
-        ))}
+      {/* Column headers + rows — share an overflow-x-auto so they scroll
+          together on mobile while the tab bar stays full-width above. */}
+      <div className="overflow-x-auto">
+        <div className="min-w-[660px]">
+          <div className="flex items-center gap-4 border-b border-border-subtle px-5 py-3">
+            <div className="w-[220px] shrink-0">
+              <ColHeader>Risk Factor</ColHeader>
+            </div>
+            <div className="w-[100px] shrink-0">
+              <ColHeader>Severity</ColHeader>
+            </div>
+            <div className="min-w-0 flex-1">
+              <ColHeader>Recommended Action</ColHeader>
+            </div>
+            <div className="w-[200px] shrink-0 text-right">
+              <ColHeader>Discovery Signal</ColHeader>
+            </div>
+            <div className="w-8 shrink-0" />
+          </div>
+
+          <div>
+            {sorted.map((f, i) => (
+              <FactorTableRow
+                key={f.key}
+                factor={f}
+                isOpen={openKey === f.key}
+                isLast={i === sorted.length - 1}
+                onToggle={() => onToggle(f.key)}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

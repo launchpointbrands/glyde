@@ -30,7 +30,7 @@ export async function Sidebar() {
       : "?";
 
   return (
-    <aside className="group/sidebar fixed inset-y-0 left-0 z-30 flex w-14 flex-col overflow-hidden border-r border-border-subtle bg-bg-sidebar transition-[width] duration-150 ease-out hover:w-[220px]">
+    <aside className="group/sidebar fixed inset-y-0 left-0 z-30 hidden w-14 flex-col overflow-hidden border-r border-border-subtle bg-bg-sidebar transition-[width] duration-150 ease-out hover:w-[220px] md:flex">
       {/* Brand: icon (collapsed) crossfades to wordmark (expanded). */}
       <div className="relative flex h-12 items-center px-3 pt-6 pb-5">
         <Image

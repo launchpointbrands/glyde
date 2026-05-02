@@ -50,9 +50,23 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
         </p>
       </div>
 
-      {/* Right — form. White panel per DESIGN.md. */}
+      {/* Right — form. White panel per DESIGN.md. The dark wordmark
+          shows above the form on iPad-portrait + mobile (left panel
+          hidden) so the brand is still present without the editorial
+          background. */}
       <div className="flex flex-1 items-center justify-center bg-bg-card px-6 py-12">
-        <div className="w-full max-w-[360px]">{children}</div>
+        <div className="w-full max-w-[360px]">
+          <Image
+            src="/brand/glyde-wordmark.svg"
+            alt="Glyde"
+            width={140}
+            height={28}
+            unoptimized
+            priority
+            className="mb-8 h-7 w-auto lg:hidden"
+          />
+          {children}
+        </div>
       </div>
     </div>
   );

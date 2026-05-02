@@ -79,7 +79,7 @@ export default async function DiscoveryPage({
   const showCompleteBanner = from === "walkthrough_complete";
 
   return (
-    <main className="flex flex-1 flex-col px-10 pt-8 pb-16">
+    <main className="flex flex-1 flex-col px-5 pt-6 pb-12 md:px-10 md:pt-8 md:pb-16">
       <div className="mx-auto w-full max-w-[1000px]">
         {showCompleteBanner && (
           <div className="mb-5 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-meta text-green-800">

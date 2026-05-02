@@ -32,7 +32,7 @@ export default async function AppLayout({
   // Sidebar is fixed-position and hovers-to-expand; content keeps a
   // constant left padding equal to the collapsed rail width.
   return (
-    <div className="min-h-full pl-14">
+    <div className="min-h-full pl-0 md:pl-14">
       <Sidebar />
       <div className="flex min-h-full flex-1 flex-col">{children}</div>
     </div>

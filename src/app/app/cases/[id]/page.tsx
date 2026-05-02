@@ -70,7 +70,7 @@ export default async function CaseOverviewPage({
     : "—";
 
   return (
-    <main className="flex flex-1 flex-col px-10 pt-8 pb-16">
+    <main className="flex flex-1 flex-col px-5 pt-6 pb-12 md:px-10 md:pt-8 md:pb-16">
       <div className="mx-auto w-full max-w-[1120px] space-y-6">
         {/* Full-width valuation hero banner */}
         <OverviewBanner
@@ -349,8 +349,9 @@ function OverviewBanner({
         )}
       </div>
 
-      {/* Right — three inline stats with vertical dividers between them */}
-      <div className="flex shrink-0 items-stretch gap-6 md:ml-auto">
+      {/* Right — three inline stats. Grid on mobile, inline-with-dividers
+          row at md+ where there's room. */}
+      <div className="grid grid-cols-3 gap-4 md:flex md:shrink-0 md:items-stretch md:gap-6 md:ml-auto">
         <InlineStat
           label="Overall readiness"
           value={

@@ -1,6 +1,7 @@
 import { Check } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { MobileCaseNav } from "@/components/case/mobile-case-nav";
 import { ClientAvatar } from "@/components/clients/client-avatar";
 import { NavLink } from "@/components/nav-link";
 import {
@@ -54,9 +55,10 @@ export default async function CaseLayout({
   const resumeQ = firstStepNeedingWork(responseByKey);
 
   return (
-    <div className="flex flex-1 flex-col">
-      <header className="border-b border-border-subtle bg-bg-card px-10 pt-8 pb-6">
-        <div className="flex items-start justify-between gap-6">
+    <div className="flex flex-1 flex-col pt-[52px] md:pt-0">
+      <MobileCaseNav caseId={id} />
+      <header className="border-b border-border-subtle bg-bg-card px-5 pt-6 pb-5 md:px-10 md:pt-8 md:pb-6">
+        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
           <div className="flex min-w-0 items-start gap-4">
             <div className={cb?.primary_owner_name ? "mt-[22px]" : ""}>
               <ClientAvatar
@@ -79,7 +81,7 @@ export default async function CaseLayout({
               )}
               {cb?.business_description && (
                 <p
-                  className="line-clamp-3 max-w-[640px] text-meta leading-[1.5] text-text-secondary"
+                  className="hidden line-clamp-3 max-w-[640px] text-meta leading-[1.5] text-text-secondary md:block"
                   title={cb.business_description}
                 >
                   {cb.business_description}
@@ -98,7 +100,7 @@ export default async function CaseLayout({
         </div>
       </header>
 
-      <nav className="flex items-center gap-9 border-b border-border-subtle bg-bg-card px-10">
+      <nav className="hidden items-center gap-9 border-b border-border-subtle bg-bg-card px-10 md:flex">
         <NavLink href={`/app/cases/${id}`}>Overview</NavLink>
         <NavLink href={`/app/cases/${id}/valuation`}>Valuation</NavLink>
         <NavLink href={`/app/cases/${id}/risk`}>Risk</NavLink>
