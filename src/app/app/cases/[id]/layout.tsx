@@ -1,6 +1,7 @@
 import { Check, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ClientAvatar } from "@/components/clients/client-avatar";
 import { NavLink } from "@/components/nav-link";
 import {
   STEPS,
@@ -23,7 +24,7 @@ export default async function CaseLayout({
     supabase
       .from("cases")
       .select(
-        "id, status, client_business:client_businesses(business_name, primary_owner_name, domain)",
+        "id, status, client_business:client_businesses(business_name, primary_owner_name, domain, business_description)",
       )
       .eq("id", id)
       .single(),
@@ -56,18 +57,33 @@ export default async function CaseLayout({
     <div className="flex flex-1 flex-col">
       <header className="border-b border-border-subtle bg-bg-card px-10 pt-8 pb-6">
         <div className="flex items-center justify-between gap-6">
-          <div className="min-w-0 space-y-1.5">
-            {cb?.primary_owner_name && (
-              <p className="text-eyebrow uppercase text-text-tertiary">
-                {cb.primary_owner_name}
-              </p>
-            )}
-            <h1 className="text-stat font-semibold text-text-primary">
-              {cb?.business_name ?? "Unnamed business"}
-            </h1>
-            {cb?.domain && (
-              <p className="text-meta text-text-secondary">{cb.domain}</p>
-            )}
+          <div className="flex min-w-0 items-center gap-4">
+            <ClientAvatar
+              businessName={cb?.business_name ?? "Unnamed business"}
+              domain={cb?.domain ?? null}
+              variant="brand"
+            />
+            <div className="min-w-0 space-y-1.5">
+              {cb?.primary_owner_name && (
+                <p className="text-eyebrow uppercase text-text-tertiary">
+                  {cb.primary_owner_name}
+                </p>
+              )}
+              <h1 className="text-stat font-semibold text-text-primary">
+                {cb?.business_name ?? "Unnamed business"}
+              </h1>
+              {cb?.domain && (
+                <p className="text-meta text-text-secondary">{cb.domain}</p>
+              )}
+              {cb?.business_description && (
+                <p
+                  className="line-clamp-3 max-w-[640px] text-meta leading-[1.5] text-text-secondary"
+                  title={cb.business_description}
+                >
+                  {cb.business_description}
+                </p>
+              )}
+            </div>
           </div>
           <div className="flex shrink-0 items-center gap-4">
             <button

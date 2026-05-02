@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { generateBusinessDescription } from "@/lib/business-description";
 import { createClient } from "@/lib/supabase/server";
 import { simulateValuation } from "@/lib/simulate";
 
@@ -90,6 +91,18 @@ export async function createCase(formData: FormData) {
     source: "simulated",
     ...sim,
   });
+
+  // Best-effort: kick off the AI business description. A failure here
+  // (no API key, network) shouldn't block the redirect into the case.
+  try {
+    await generateBusinessDescription({
+      clientBusinessId: cb.id,
+      domain,
+      businessName,
+    });
+  } catch (e) {
+    console.error("generateBusinessDescription (createCase) failed", e);
+  }
 
   revalidatePath("/app");
   redirect(`/app/cases/${caseRow.id}/risk`);

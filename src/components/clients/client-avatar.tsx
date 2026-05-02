@@ -2,10 +2,14 @@
 
 import { useState } from "react";
 
-// 48px square avatar — favicon-first, initials fallback. Falls back on
-// network error or 404 (Google's favicon endpoint returns a globe icon
-// when the site has none; that case isn't pixel-detectable from the
-// client, so we live with the occasional generic globe).
+// Square avatar with a three-stage logo cascade:
+//   clearbit → google favicon → initials.
+// Each <img> falls through to the next stage on error. Clearbit returns
+// proper logos when the domain is in their index; Google favicons cover
+// the long tail (with the occasional generic globe); the initials chip
+// is the last-resort branded surface.
+
+type Stage = "clearbit" | "favicon" | "initials";
 
 function initialsFor(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -17,33 +21,55 @@ export function ClientAvatar({
   businessName,
   domain,
   size = 48,
+  variant = "neutral",
 }: {
   businessName: string;
   domain: string | null;
   size?: number;
+  variant?: "neutral" | "brand";
 }) {
-  const [failed, setFailed] = useState(false);
-  const showFavicon = !!domain && !failed;
+  const [stage, setStage] = useState<Stage>(domain ? "clearbit" : "initials");
+  const isInitials = stage === "initials";
 
   return (
     <div
-      className="flex shrink-0 items-center justify-center overflow-hidden rounded-md border border-border-subtle bg-bg-hover"
+      className={[
+        "flex shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-border-subtle",
+        isInitials && variant === "brand" ? "bg-green-50" : "bg-bg-hover",
+      ].join(" ")}
       style={{ width: size, height: size }}
     >
-      {showFavicon ? (
+      {stage === "clearbit" && domain && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={`https://logo.clearbit.com/${encodeURIComponent(domain)}`}
+          alt=""
+          className="h-full w-full object-cover"
+          onError={() => setStage("favicon")}
+        />
+      )}
+      {stage === "favicon" && domain && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(
-            domain!,
+            domain,
           )}&sz=64`}
           alt=""
           width={32}
           height={32}
           className="h-8 w-8"
-          onError={() => setFailed(true)}
+          onError={() => setStage("initials")}
         />
-      ) : (
-        <span className="text-meta font-medium text-text-secondary">
+      )}
+      {isInitials && (
+        <span
+          className={[
+            "font-medium",
+            variant === "brand"
+              ? "text-body text-green-800"
+              : "text-meta text-text-secondary",
+          ].join(" ")}
+        >
           {initialsFor(businessName)}
         </span>
       )}
