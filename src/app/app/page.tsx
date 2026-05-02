@@ -69,7 +69,7 @@ export default async function CasesPage() {
               href="/app/cases/new"
               className="inline-block rounded-md bg-green-400 px-5 py-2.5 text-meta font-medium text-text-inverse transition-colors hover:bg-green-600"
             >
-              Add a business
+              Add a client
             </Link>
             <form action={seedDemoCase}>
               <button
@@ -122,7 +122,7 @@ export default async function CasesPage() {
             href="/app/cases/new"
             className="rounded-md bg-green-400 px-4 py-2 text-meta font-medium text-text-inverse transition-colors hover:bg-green-600"
           >
-            Add a business
+            Add a client
           </Link>
         </div>
 

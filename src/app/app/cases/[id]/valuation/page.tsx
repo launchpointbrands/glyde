@@ -93,7 +93,7 @@ export default async function ValuationPage({
 
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.4fr_1fr]">
           {/* LEFT — narrative */}
-          <div className="space-y-10 rounded-[10px] border border-border-subtle bg-bg-card px-7 py-6 shadow-card">
+          <div className="rounded-[10px] border border-border-subtle bg-bg-card px-7 py-6 shadow-card">
             <section>
               <h2 className="text-section font-medium text-text-primary">
                 Valuation estimates
@@ -109,7 +109,7 @@ export default async function ValuationPage({
                   <p className="text-meta text-text-secondary">
                     Business valuation range
                   </p>
-                  <p className="mt-2 whitespace-nowrap text-[36px] font-light leading-none tracking-tight text-text-primary">
+                  <p className="mt-2 whitespace-nowrap text-[36px] font-light leading-none tabular-nums font-mono text-text-primary">
                     {formatUSD(snap.valuation_low)} – {formatUSD(snap.valuation_high)}
                   </p>
                 </div>
@@ -117,7 +117,7 @@ export default async function ValuationPage({
                   <p className="text-meta text-text-secondary">
                     Current valuation estimate
                   </p>
-                  <p className="mt-2 text-[36px] font-light leading-none tabular-nums font-mono text-text-primary">
+                  <p className="mt-2 text-stat font-light leading-none tabular-nums font-mono text-text-primary">
                     {formatUSDFull(snap.valuation_estimate)}
                   </p>
                 </div>
@@ -125,12 +125,16 @@ export default async function ValuationPage({
                   <p className="text-meta text-text-secondary">
                     Value of the equity you own ({ownerPct}%)
                   </p>
-                  <p className="mt-2 text-[36px] font-light leading-none tabular-nums font-mono text-text-primary">
+                  <p className="mt-2 text-stat font-light leading-none tabular-nums font-mono text-text-primary">
                     {formatUSDFull(snap.equity_value_owned)}
                   </p>
                 </div>
               </div>
             </section>
+
+            <ValuationScaleBar
+              currentEstimate={snap.valuation_estimate ?? 0}
+            />
 
             <section>
               <h2 className="text-section font-medium text-text-primary">
@@ -383,6 +387,58 @@ export default async function ValuationPage({
         <FooterActions />
       </div>
     </main>
+  );
+}
+
+function ValuationScaleBar({ currentEstimate }: { currentEstimate: number }) {
+  const SCALE_MAX = 20_000_000;
+  const markerPct = Math.min((currentEstimate / SCALE_MAX) * 100, 96);
+  return (
+    <div className="mt-5 mb-7">
+      {/* Track + marker pin */}
+      <div className="relative">
+        <div
+          className="h-2 rounded-[4px]"
+          style={{
+            background:
+              "linear-gradient(to right, var(--color-danger-text) 0%, var(--color-warning-text) 40%, var(--color-success-text) 75%, var(--color-success-text) 100%)",
+          }}
+          aria-hidden
+        />
+        <div
+          className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-bg-card"
+          style={{
+            left: `${markerPct}%`,
+            border: "2px solid var(--color-text-primary)",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+          }}
+          aria-hidden
+        />
+      </div>
+
+      {/* Marker label below pin */}
+      <div className="relative mt-2 h-4">
+        <span
+          className="absolute -translate-x-1/2 font-mono text-[11px] tabular-nums text-text-primary"
+          style={{ left: `${markerPct}%` }}
+        >
+          {formatUSD(currentEstimate)}
+        </span>
+      </div>
+
+      {/* Scale ends */}
+      <div className="mt-1 flex justify-between font-mono text-[11px] tabular-nums text-text-tertiary">
+        <span>$0</span>
+        <span>$20M+</span>
+      </div>
+
+      {/* Zone labels */}
+      <div className="mt-2 grid grid-cols-3 text-[11px] uppercase tracking-[0.05em] text-text-tertiary">
+        <span className="text-left">Lower value</span>
+        <span className="text-center">Average</span>
+        <span className="text-right">Higher value</span>
+      </div>
+    </div>
   );
 }
 
