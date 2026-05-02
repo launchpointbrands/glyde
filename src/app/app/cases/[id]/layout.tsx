@@ -1,24 +1,7 @@
-import { Check, MoreHorizontal } from "lucide-react";
-import Link from "next/link";
+import { MoreHorizontal } from "lucide-react";
 import { notFound } from "next/navigation";
 import { NavLink } from "@/components/nav-link";
-import { getCaseStats } from "@/lib/case-stats";
-import {
-  STEPS,
-  TOTAL_STEPS,
-  firstStepNeedingWork,
-} from "@/lib/discovery-walkthrough";
 import { createClient } from "@/lib/supabase/server";
-
-const formatUSD = (n: number | null | undefined) => {
-  if (n == null) return "—";
-  if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-  if (Math.abs(n) >= 1_000) return `$${Math.round(n / 1_000)}K`;
-  return `$${n.toLocaleString()}`;
-};
-
-const capitalize = (s: string | null | undefined) =>
-  !s ? "—" : s.charAt(0).toUpperCase() + s.slice(1);
 
 export default async function CaseLayout({
   children,
@@ -30,39 +13,19 @@ export default async function CaseLayout({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: caseRow }, { data: responses }, stats] = await Promise.all([
-    supabase
-      .from("cases")
-      .select(
-        "id, status, client_business:client_businesses(business_name, primary_owner_name, domain)",
-      )
-      .eq("id", id)
-      .single(),
-    supabase
-      .from("discovery_responses")
-      .select("field_key, source, status")
-      .eq("case_id", id),
-    getCaseStats(id),
-  ]);
+  const { data: caseRow } = await supabase
+    .from("cases")
+    .select(
+      "id, status, client_business:client_businesses(business_name, primary_owner_name, domain)",
+    )
+    .eq("id", id)
+    .single();
 
   if (!caseRow) notFound();
 
   const cb = Array.isArray(caseRow.client_business)
     ? caseRow.client_business[0]
     : caseRow.client_business;
-
-  const responseByKey = new Map(
-    (responses ?? []).map((r) => [
-      r.field_key as string,
-      { source: r.source as string, status: r.status as string },
-    ]),
-  );
-  const verifiedCount = STEPS.filter((s) => {
-    const r = responseByKey.get(s.fieldKey);
-    return r?.status === "answered" && r.source !== "simulated";
-  }).length;
-  const isComplete = verifiedCount === TOTAL_STEPS;
-  const resumeQ = firstStepNeedingWork(responseByKey);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -81,7 +44,7 @@ export default async function CaseLayout({
               <p className="text-meta text-text-secondary">{cb.domain}</p>
             )}
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-4">
+          <div className="flex shrink-0 items-center gap-3">
             <button
               type="button"
               aria-label="More actions"
@@ -89,17 +52,9 @@ export default async function CaseLayout({
             >
               <MoreHorizontal className="h-4 w-4" />
             </button>
-            <DiscoveryStatus
-              caseId={id}
-              verifiedCount={verifiedCount}
-              isComplete={isComplete}
-              resumeQ={resumeQ}
-            />
           </div>
         </div>
       </header>
-
-      <StatsBar stats={stats} />
 
       <nav className="flex items-center gap-9 border-b border-border-subtle bg-bg-card px-10">
         <NavLink href={`/app/cases/${id}`}>Overview</NavLink>
@@ -110,127 +65,6 @@ export default async function CaseLayout({
       </nav>
 
       <div className="flex flex-1 flex-col">{children}</div>
-    </div>
-  );
-}
-
-function DiscoveryStatus({
-  caseId,
-  verifiedCount,
-  isComplete,
-  resumeQ,
-}: {
-  caseId: string;
-  verifiedCount: number;
-  isComplete: boolean;
-  resumeQ: number;
-}) {
-  return (
-    <div className="flex flex-col items-end gap-1.5">
-      <p className="text-[10px] font-medium uppercase tracking-[0.05em] text-text-tertiary">
-        Discovery
-      </p>
-      {isComplete ? (
-        <p className="inline-flex items-center gap-1.5 text-meta text-success-fg">
-          <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-          Complete
-        </p>
-      ) : (
-        <>
-          <p className="text-meta text-text-secondary">
-            <span className="font-mono tabular-nums text-text-primary">
-              {verifiedCount}
-            </span>{" "}
-            of{" "}
-            <span className="font-mono tabular-nums text-text-primary">
-              {TOTAL_STEPS}
-            </span>{" "}
-            verified
-          </p>
-          <Link
-            href={`/app/cases/${caseId}/discovery/walkthrough?q=${resumeQ}`}
-            className="rounded-md bg-green-400 px-3 py-1.5 text-meta font-medium text-text-inverse transition-colors hover:bg-green-600"
-          >
-            Continue →
-          </Link>
-        </>
-      )}
-    </div>
-  );
-}
-
-function StatsBar({
-  stats,
-}: {
-  stats: Awaited<ReturnType<typeof getCaseStats>>;
-}) {
-  const { valuation, risk, overallScore, ebitdaGap } = stats;
-
-  const overallRisk = risk?.overall_risk ?? null;
-  const riskTone =
-    overallRisk === "high"
-      ? "text-danger-fg"
-      : overallRisk === "moderate"
-        ? "text-warning-fg"
-        : "text-text-primary";
-  const ebitdaTone =
-    ebitdaGap != null && ebitdaGap > 500_000
-      ? "text-warning-fg"
-      : "text-text-primary";
-
-  const valuationValue =
-    valuation?.valuation_low != null && valuation?.valuation_high != null
-      ? `${formatUSD(valuation.valuation_low)} – ${formatUSD(valuation.valuation_high)}`
-      : "—";
-
-  return (
-    <div className="bg-bg-card px-10 py-4">
-      <div className="grid grid-cols-4 gap-3">
-        <StatBarCard label="Valuation range">
-          <span className="whitespace-nowrap text-text-primary">
-            {valuationValue}
-          </span>
-        </StatBarCard>
-        <StatBarCard label="Overall readiness">
-          {overallScore != null ? (
-            <span className="text-text-primary">
-              <span className="font-mono tabular-nums">{overallScore}</span>
-              <span className="ml-1 font-normal text-text-tertiary">
-                / 100
-              </span>
-            </span>
-          ) : (
-            <span className="text-text-tertiary">—</span>
-          )}
-        </StatBarCard>
-        <StatBarCard label="Business risk">
-          <span className={riskTone}>
-            {overallRisk ? capitalize(overallRisk) : "—"}
-          </span>
-        </StatBarCard>
-        <StatBarCard label="EBITDA gap">
-          <span className={`font-mono tabular-nums ${ebitdaTone}`}>
-            {ebitdaGap != null ? formatUSD(ebitdaGap) : "—"}
-          </span>
-        </StatBarCard>
-      </div>
-    </div>
-  );
-}
-
-function StatBarCard({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-[10px] border border-border-subtle bg-bg-card px-[18px] py-[14px] shadow-card">
-      <p className="text-[10px] font-medium uppercase tracking-[0.05em] text-text-tertiary">
-        {label}
-      </p>
-      <p className="mt-1 text-section font-medium leading-tight">{children}</p>
     </div>
   );
 }

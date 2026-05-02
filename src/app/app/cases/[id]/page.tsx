@@ -1,10 +1,16 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { PathItemRow } from "@/components/dashboard/path-item";
 import { SeverityHero } from "@/components/dashboard/severity-hero";
 import { StatCard, StatCardHeading } from "@/components/dashboard/stat-card";
 import { getCaseStats } from "@/lib/case-stats";
+import {
+  STEPS,
+  TOTAL_STEPS,
+  firstStepNeedingWork,
+} from "@/lib/discovery-walkthrough";
 import { buildPathItems } from "@/lib/path";
+import { createClient } from "@/lib/supabase/server";
 
 const formatUSD = (n: number | null | undefined) => {
   if (n == null) return "—";
@@ -39,10 +45,15 @@ export default async function CaseOverviewPage({
   params: Promise<{ id: string }>;
 }) {
   const { id: caseId } = await params;
+  const supabase = await createClient();
 
-  const [stats, pathItems] = await Promise.all([
+  const [stats, pathItems, { data: responses }] = await Promise.all([
     getCaseStats(caseId),
     buildPathItems(caseId),
+    supabase
+      .from("discovery_responses")
+      .select("field_key, source, status")
+      .eq("case_id", caseId),
   ]);
 
   const {
@@ -54,6 +65,7 @@ export default async function CaseOverviewPage({
     personalScore,
     businessScore,
     overallScore,
+    ebitdaGap,
   } = stats;
 
   const overallRisk = risk?.overall_risk ?? null;
@@ -67,56 +79,99 @@ export default async function CaseOverviewPage({
     ? PATH_TITLE[succession.selected_path] ?? "—"
     : "—";
 
+  // Discovery state for the strip at the top of the page.
+  const responseByKey = new Map(
+    (responses ?? []).map((r) => [
+      r.field_key as string,
+      { source: r.source as string, status: r.status as string },
+    ]),
+  );
+  const verifiedCount = STEPS.filter((s) => {
+    const r = responseByKey.get(s.fieldKey);
+    return r?.status === "answered" && r.source !== "simulated";
+  }).length;
+  const isComplete = verifiedCount === TOTAL_STEPS;
+  const resumeQ = firstStepNeedingWork(responseByKey);
+
+  // Severity tints for the top-row stat cards.
+  const riskTone =
+    overallRisk === "high"
+      ? "text-danger-fg"
+      : overallRisk === "moderate"
+        ? "text-warning-fg"
+        : "text-text-primary";
+  const ebitdaTone =
+    ebitdaGap != null && ebitdaGap > 500_000
+      ? "text-warning-fg"
+      : "text-text-primary";
+  const valuationRange =
+    valuation?.valuation_low != null && valuation?.valuation_high != null
+      ? `${formatUSD(valuation.valuation_low)} – ${formatUSD(valuation.valuation_high)}`
+      : "—";
+
   return (
-    <main className="flex flex-1 flex-col px-10 pt-10 pb-16">
-      <div className="mx-auto w-full max-w-[1120px]">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.5fr_1fr]">
-          {/* LEFT — Advisor path */}
-          <div>
-            <h2 className="text-section font-semibold text-text-primary">
-              Advisor path
-            </h2>
-            <p className="mt-2 max-w-xl text-meta text-text-secondary">
-              The conversations to have, in priority order. Click the
-              indicator to mark progress.
-            </p>
+    <main className="flex flex-1 flex-col px-10 pt-8 pb-16">
+      <div className="mx-auto w-full max-w-[1120px] space-y-6">
+        {/* Discovery strip — full width */}
+        <DiscoveryStrip
+          caseId={caseId}
+          verifiedCount={verifiedCount}
+          isComplete={isComplete}
+          resumeQ={resumeQ}
+        />
 
-            {pathItems.length === 0 ? (
-              <div className="mt-6 rounded-[10px] border border-dashed border-border-default bg-bg-card px-6 py-10 text-center">
-                <p className="text-body text-text-secondary">
-                  No path items yet — complete discovery to see suggested
-                  actions.
-                </p>
-                <Link
-                  href={`/app/cases/${caseId}/discovery`}
-                  className="mt-3 inline-flex items-center gap-1.5 text-meta font-medium text-green-600 transition-colors hover:text-green-800"
-                >
-                  Go to discovery <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-            ) : (
-              <ul className="mt-5 divide-y divide-border-subtle rounded-[10px] border border-border-subtle bg-bg-card px-5 shadow-card">
-                {activeItems.map((item) => (
-                  <PathItemRow key={item.key} caseId={caseId} item={item} />
-                ))}
-                {doneItems.length > 0 && (
-                  <>
-                    <li className="pt-5 pb-2">
-                      <p className="text-eyebrow uppercase text-text-tertiary">
-                        Done
-                      </p>
-                    </li>
-                    {doneItems.map((item) => (
-                      <PathItemRow key={item.key} caseId={caseId} item={item} />
-                    ))}
-                  </>
-                )}
-              </ul>
-            )}
-          </div>
+        {/* Set A — four tall summary stat cards */}
+        <div className="grid grid-cols-4 gap-3">
+          <StatCardA
+            label="Valuation range"
+            value={
+              <span className="font-mono tabular-nums text-text-primary">
+                {valuationRange}
+              </span>
+            }
+            secondary={
+              valuation?.valuation_estimate != null
+                ? `Current estimate ${formatUSDFull(valuation.valuation_estimate)}`
+                : undefined
+            }
+          />
+          <StatCardA
+            label="Overall readiness"
+            value={
+              overallScore != null ? (
+                <span className="text-text-primary">
+                  <span className="font-mono tabular-nums">{overallScore}</span>
+                  <span className="ml-1.5 text-meta font-normal text-text-tertiary">
+                    / 100
+                  </span>
+                </span>
+              ) : (
+                <span className="text-text-tertiary">—</span>
+              )
+            }
+          />
+          <StatCardA
+            label="Business risk"
+            value={
+              <span className={riskTone}>
+                {overallRisk ? capitalize(overallRisk) : "—"}
+              </span>
+            }
+          />
+          <StatCardA
+            label="EBITDA gap"
+            value={
+              <span className={`font-mono tabular-nums ${ebitdaTone}`}>
+                {ebitdaGap != null ? formatUSD(ebitdaGap) : "—"}
+              </span>
+            }
+          />
+        </div>
 
-          {/* RIGHT — module summary cards */}
-          <div className="space-y-4">
+        {/* Body — modules left in 2x2, advisor path right */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
+          {/* LEFT — Set B module cards in 2x2 */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <ModuleCard
               title="Valuation"
               href={`/app/cases/${caseId}/valuation`}
@@ -237,9 +292,120 @@ export default async function CaseOverviewPage({
               }
             />
           </div>
+
+          {/* RIGHT — Advisor path */}
+          <div>
+            <h2 className="text-section font-semibold text-text-primary">
+              Advisor path
+            </h2>
+            <p className="mt-2 max-w-xl text-meta text-text-secondary">
+              The conversations to have, in priority order. Click the
+              indicator to mark progress.
+            </p>
+
+            {pathItems.length === 0 ? (
+              <div className="mt-6 rounded-[10px] border border-dashed border-border-default bg-bg-card px-6 py-10 text-center">
+                <p className="text-body text-text-secondary">
+                  No path items yet — complete discovery to see suggested
+                  actions.
+                </p>
+                <Link
+                  href={`/app/cases/${caseId}/discovery`}
+                  className="mt-3 inline-flex items-center gap-1.5 text-meta font-medium text-green-600 transition-colors hover:text-green-800"
+                >
+                  Go to discovery <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            ) : (
+              <ul className="mt-5 divide-y divide-border-subtle rounded-[10px] border border-border-subtle bg-bg-card px-5 shadow-card">
+                {activeItems.map((item) => (
+                  <PathItemRow key={item.key} caseId={caseId} item={item} />
+                ))}
+                {doneItems.length > 0 && (
+                  <>
+                    <li className="pt-5 pb-2">
+                      <p className="text-eyebrow uppercase text-text-tertiary">
+                        Done
+                      </p>
+                    </li>
+                    {doneItems.map((item) => (
+                      <PathItemRow key={item.key} caseId={caseId} item={item} />
+                    ))}
+                  </>
+                )}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
     </main>
+  );
+}
+
+function DiscoveryStrip({
+  caseId,
+  verifiedCount,
+  isComplete,
+  resumeQ,
+}: {
+  caseId: string;
+  verifiedCount: number;
+  isComplete: boolean;
+  resumeQ: number;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-[10px] bg-bg-hover px-5 py-3">
+      <div className="flex items-baseline gap-3">
+        <span className="text-[10px] font-medium uppercase tracking-[0.05em] text-text-tertiary">
+          Discovery
+        </span>
+        <span className="text-[14px] text-text-secondary">
+          <span className="font-mono tabular-nums text-text-primary">
+            {verifiedCount}
+          </span>{" "}
+          of{" "}
+          <span className="font-mono tabular-nums text-text-primary">
+            {TOTAL_STEPS}
+          </span>{" "}
+          verified
+        </span>
+      </div>
+      {isComplete ? (
+        <span className="inline-flex items-center gap-1.5 text-meta text-success-fg">
+          <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+          All questions verified
+        </span>
+      ) : (
+        <Link
+          href={`/app/cases/${caseId}/discovery/walkthrough?q=${resumeQ}`}
+          className="rounded-md bg-green-400 px-3.5 py-1.5 text-meta font-medium text-text-inverse transition-colors hover:bg-green-600"
+        >
+          Continue →
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function StatCardA({
+  label,
+  value,
+  secondary,
+}: {
+  label: string;
+  value: React.ReactNode;
+  secondary?: string;
+}) {
+  return (
+    <div className="flex min-h-[120px] flex-col rounded-[10px] border border-border-subtle bg-bg-card p-5 shadow-card">
+      <p className="mb-3 text-eyebrow uppercase text-text-tertiary">{label}</p>
+      <p className="text-stat font-medium leading-none">{value}</p>
+      {secondary && (
+        <p className="mt-2 font-mono tabular-nums text-meta text-text-secondary">
+          {secondary}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -255,7 +421,7 @@ function ModuleCard({
   rows: { k: string; v: string }[];
 }) {
   return (
-    <StatCard className="px-5 py-5">
+    <StatCard className="px-5 py-4">
       <StatCardHeading>{title}</StatCardHeading>
       <div className="mt-4">{hero}</div>
       {rows.length > 0 && (
