@@ -129,50 +129,14 @@ export default async function CaseOverviewPage({
   return (
     <main className="flex flex-1 flex-col px-10 pt-8 pb-16">
       <div className="mx-auto w-full max-w-[1120px]">
-        <section className="space-y-4">
-          <ValuationHero
-            low={valuation?.valuation_low ?? null}
-            high={valuation?.valuation_high ?? null}
-            estimate={valuation?.valuation_estimate ?? null}
-          />
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Tile
-              label="Overall readiness"
-              value={
-                overallScore != null ? (
-                  <span>
-                    <span>{overallScore}</span>
-                    <span className="ml-1.5 text-meta font-normal text-text-tertiary">
-                      / 100
-                    </span>
-                  </span>
-                ) : (
-                  "—"
-                )
-              }
-            />
-            <Tile
-              label="Business risk"
-              value={overallRisk ? capitalize(overallRisk) : "—"}
-              mono={false}
-              valueClassName={
-                overallRisk === "high"
-                  ? "text-danger-fg"
-                  : overallRisk === "moderate"
-                    ? "text-warning-fg"
-                    : ""
-              }
-            />
-            <Tile
-              label="EBITDA gap"
-              value={ebitdaGap != null ? formatUSD(ebitdaGap) : "—"}
-              valueClassName={
-                ebitdaGap != null && ebitdaGap > 500_000 ? "text-warning-fg" : ""
-              }
-            />
-          </div>
-        </section>
+        <OverviewBanner
+          low={valuation?.valuation_low ?? null}
+          high={valuation?.valuation_high ?? null}
+          estimate={valuation?.valuation_estimate ?? null}
+          overallScore={overallScore}
+          overallRisk={overallRisk}
+          ebitdaGap={ebitdaGap}
+        />
 
         <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-[1.5fr_1fr]">
           {/* LEFT — Advisor path */}
@@ -345,57 +309,110 @@ export default async function CaseOverviewPage({
   );
 }
 
-function ValuationHero({
+function OverviewBanner({
   low,
   high,
   estimate,
+  overallScore,
+  overallRisk,
+  ebitdaGap,
 }: {
   low: number | null;
   high: number | null;
   estimate: number | null;
+  overallScore: number | null;
+  overallRisk: Severity | null;
+  ebitdaGap: number | null;
 }) {
   const hasRange = low != null && high != null;
+
+  const riskTone =
+    overallRisk === "high"
+      ? "text-danger-fg"
+      : overallRisk === "moderate"
+        ? "text-warning-fg"
+        : "";
+  const ebitdaTone =
+    ebitdaGap != null && ebitdaGap > 500_000 ? "text-warning-fg" : "";
+
   return (
-    <div className="rounded-[10px] border border-border-subtle bg-bg-card px-7 py-7 shadow-card">
-      <p className="whitespace-nowrap text-[38px] font-light leading-none tracking-tight text-text-primary">
-        {hasRange ? `${formatUSD(low)} – ${formatUSD(high)}` : "—"}
-      </p>
-      <p className="mt-3 text-eyebrow uppercase text-text-tertiary">
-        Business valuation range
-      </p>
-      {estimate != null && (
-        <p className="mt-3 text-meta text-text-secondary">
-          Current estimate{" "}
-          <span className="font-mono tabular-nums text-text-primary">
-            {formatUSDFull(estimate)}
-          </span>
+    <div className="flex flex-col items-stretch gap-8 rounded-[10px] border border-border-subtle bg-bg-card px-8 py-7 shadow-card md:flex-row md:items-center md:justify-between">
+      {/* Left — valuation */}
+      <div className="min-w-0">
+        <p className="whitespace-nowrap text-[36px] font-light leading-none tracking-tight text-text-primary">
+          {hasRange ? `${formatUSD(low)} – ${formatUSD(high)}` : "—"}
         </p>
-      )}
+        <p className="mt-3 text-eyebrow uppercase text-text-tertiary">
+          Business valuation range
+        </p>
+        {estimate != null && (
+          <p className="mt-3 text-meta text-text-secondary">
+            Current estimate{" "}
+            <span className="font-mono tabular-nums text-text-primary">
+              {formatUSDFull(estimate)}
+            </span>
+          </p>
+        )}
+      </div>
+
+      {/* Right — three inline stats with vertical dividers between them */}
+      <div className="flex shrink-0 items-stretch gap-6 md:ml-auto">
+        <InlineStat
+          label="Overall readiness"
+          value={
+            overallScore != null ? (
+              <>
+                <span className="font-mono tabular-nums">{overallScore}</span>
+                <span className="ml-1 text-meta font-normal text-text-tertiary">
+                  / 100
+                </span>
+              </>
+            ) : (
+              "—"
+            )
+          }
+        />
+        <InlineStat
+          label="Business risk"
+          divider
+          value={
+            <span className={riskTone}>
+              {overallRisk ? capitalize(overallRisk) : "—"}
+            </span>
+          }
+        />
+        <InlineStat
+          label="EBITDA gap"
+          divider
+          value={
+            <span className={`font-mono tabular-nums ${ebitdaTone}`}>
+              {ebitdaGap != null ? formatUSD(ebitdaGap) : "—"}
+            </span>
+          }
+        />
+      </div>
     </div>
   );
 }
 
-function Tile({
+function InlineStat({
   label,
   value,
-  valueClassName,
-  mono = true,
+  divider,
 }: {
   label: string;
   value: React.ReactNode;
-  valueClassName?: string;
-  mono?: boolean;
+  divider?: boolean;
 }) {
   return (
-    <div className="rounded-[10px] border border-border-subtle bg-bg-card px-5 py-5 shadow-card">
+    <div
+      className={[
+        "flex flex-col justify-center",
+        divider ? "border-l border-border-subtle pl-6" : "",
+      ].join(" ")}
+    >
       <p className="text-eyebrow uppercase text-text-tertiary">{label}</p>
-      <p
-        className={[
-          "mt-3 text-stat font-light leading-none tabular-nums text-text-primary",
-          mono ? "font-mono" : "",
-          valueClassName ?? "",
-        ].join(" ")}
-      >
+      <p className="mt-2 text-section font-medium leading-none text-text-primary">
         {value}
       </p>
     </div>
