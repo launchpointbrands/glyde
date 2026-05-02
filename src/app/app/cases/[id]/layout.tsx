@@ -99,13 +99,7 @@ export default async function CaseLayout({
         </div>
       </header>
 
-      <StatsBar
-        caseId={id}
-        stats={stats}
-        verifiedCount={verifiedCount}
-        isComplete={isComplete}
-        resumeQ={resumeQ}
-      />
+      <StatsBar stats={stats} />
 
       <nav className="flex items-center gap-9 border-b border-border-subtle bg-bg-card px-10">
         <NavLink href={`/app/cases/${id}`}>Overview</NavLink>
@@ -166,17 +160,9 @@ function DiscoveryStatus({
 }
 
 function StatsBar({
-  caseId,
   stats,
-  verifiedCount,
-  isComplete,
-  resumeQ,
 }: {
-  caseId: string;
   stats: Awaited<ReturnType<typeof getCaseStats>>;
-  verifiedCount: number;
-  isComplete: boolean;
-  resumeQ: number;
 }) {
   const { valuation, risk, overallScore, ebitdaGap } = stats;
 
@@ -198,19 +184,17 @@ function StatsBar({
       : "—";
 
   return (
-    <div className="border-b border-border-subtle bg-bg-hover px-10 py-3">
-      <div className="grid grid-cols-5">
-        <StatCell label="Valuation range">
-          <span className="whitespace-nowrap font-medium text-text-primary">
+    <div className="bg-bg-card px-10 py-4">
+      <div className="grid grid-cols-4 gap-3">
+        <StatBarCard label="Valuation range">
+          <span className="whitespace-nowrap text-text-primary">
             {valuationValue}
           </span>
-        </StatCell>
-        <StatCell label="Readiness" divider>
+        </StatBarCard>
+        <StatBarCard label="Overall readiness">
           {overallScore != null ? (
             <span className="text-text-primary">
-              <span className="font-mono tabular-nums font-medium">
-                {overallScore}
-              </span>
+              <span className="font-mono tabular-nums">{overallScore}</span>
               <span className="ml-1 font-normal text-text-tertiary">
                 / 100
               </span>
@@ -218,63 +202,35 @@ function StatsBar({
           ) : (
             <span className="text-text-tertiary">—</span>
           )}
-        </StatCell>
-        <StatCell label="Business risk" divider>
-          <span className={`font-medium ${riskTone}`}>
+        </StatBarCard>
+        <StatBarCard label="Business risk">
+          <span className={riskTone}>
             {overallRisk ? capitalize(overallRisk) : "—"}
           </span>
-        </StatCell>
-        <StatCell label="EBITDA gap" divider>
-          <span className={`font-mono tabular-nums font-medium ${ebitdaTone}`}>
+        </StatBarCard>
+        <StatBarCard label="EBITDA gap">
+          <span className={`font-mono tabular-nums ${ebitdaTone}`}>
             {ebitdaGap != null ? formatUSD(ebitdaGap) : "—"}
           </span>
-        </StatCell>
-        <StatCell label="Discovery" divider>
-          <span className="inline-flex items-center gap-2 text-text-primary">
-            <span className="font-mono tabular-nums font-medium">
-              {verifiedCount} / {TOTAL_STEPS}
-            </span>
-            {isComplete ? (
-              <Check
-                className="h-4 w-4 text-success-fg"
-                strokeWidth={2.5}
-                aria-hidden
-              />
-            ) : (
-              <Link
-                href={`/app/cases/${caseId}/discovery/walkthrough?q=${resumeQ}`}
-                className="text-meta font-medium text-green-600 transition-colors hover:text-green-800"
-              >
-                Continue →
-              </Link>
-            )}
-          </span>
-        </StatCell>
+        </StatBarCard>
       </div>
     </div>
   );
 }
 
-function StatCell({
+function StatBarCard({
   label,
-  divider,
   children,
 }: {
   label: string;
-  divider?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div
-      className={[
-        "flex flex-col gap-1",
-        divider ? "border-l border-border-subtle pl-5" : "pr-5",
-      ].join(" ")}
-    >
+    <div className="rounded-[10px] border border-border-subtle bg-bg-card px-[18px] py-[14px] shadow-card">
       <p className="text-[10px] font-medium uppercase tracking-[0.05em] text-text-tertiary">
         {label}
       </p>
-      <p className="text-body leading-tight">{children}</p>
+      <p className="mt-1 text-section font-medium leading-tight">{children}</p>
     </div>
   );
 }
