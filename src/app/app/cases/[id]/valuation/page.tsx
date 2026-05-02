@@ -2,7 +2,6 @@ import { TriangleAlert } from "lucide-react";
 import { DashboardEmptyState } from "@/components/dashboard/empty-state";
 import { FooterActions } from "@/components/dashboard/footer-actions";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { StatCard, StatCardHeading } from "@/components/dashboard/stat-card";
 import { createClient } from "@/lib/supabase/server";
 
 const formatUSD = (n: number | null | undefined) => {
@@ -169,111 +168,83 @@ export default async function ValuationPage({
             </section>
           </div>
 
-          {/* RIGHT — Key factors stat card */}
-          <div>
-            <StatCard>
-              <StatCardHeading>Key factors</StatCardHeading>
+          {/* RIGHT — one card per key-factor section */}
+          <div className="flex flex-col gap-3">
+            <FactorCard
+              title="Revenue & Earnings"
+              description="Revenue and Normalized Earnings are the primary drivers when estimating business valuation."
+            >
+              <KvRow k="2024 Revenue" v={formatUSDFull(snap.revenue_ttm)} />
+              <KvRow
+                k="Normalized EBITDA"
+                v={formatUSDFull(snap.normalized_ebitda)}
+              />
+            </FactorCard>
 
-              <div className="mt-6">
-                <h4 className="text-body font-medium text-text-primary">
-                  Revenue &amp; Earnings
-                </h4>
-                <p className="mt-1 text-meta text-text-secondary">
-                  Revenue and Normalized Earnings are the primary drivers
-                  when estimating business valuation.
-                </p>
-                <div className="mt-3 space-y-1">
-                  <KvRow k="2024 Revenue" v={formatUSDFull(snap.revenue_ttm)} />
-                  <KvRow
-                    k="Normalized EBITDA"
-                    v={formatUSDFull(snap.normalized_ebitda)}
-                  />
-                </div>
-              </div>
+            <FactorCard
+              title="Balance sheet"
+              description="Debt and excess cash influence the equity value of the business directly."
+            >
+              <KvRow
+                k="Net working capital"
+                v={formatUSDFull(snap.net_working_capital)}
+              />
+              <KvRow
+                k="Interest-bearing debt"
+                v={formatUSDFull(snap.interest_bearing_debt)}
+              />
+              <KvRow
+                k="Total impact of balance sheet"
+                v={
+                  <span className="inline-flex items-center gap-1.5 text-success-fg">
+                    <TriangleAlert
+                      className="h-3 w-3 fill-success-fg"
+                      aria-hidden
+                    />
+                    {formatUSDFull(snap.balance_sheet_impact)}
+                  </span>
+                }
+                bold
+              />
+            </FactorCard>
 
-              <div className="mt-6">
-                <h4 className="text-body font-medium text-text-primary">
-                  Balance sheet
-                </h4>
-                <p className="mt-1 text-meta text-text-secondary">
-                  Debt and excess cash influence the equity value of the
-                  business directly.
-                </p>
-                <div className="mt-3 space-y-1">
-                  <KvRow
-                    k="Net working capital"
-                    v={formatUSDFull(snap.net_working_capital)}
-                  />
-                  <KvRow
-                    k="Interest-bearing debt"
-                    v={formatUSDFull(snap.interest_bearing_debt)}
-                  />
-                  <KvRow
-                    k="Total impact of balance sheet"
-                    v={
-                      <span className="inline-flex items-center gap-1.5 text-success-fg">
-                        <TriangleAlert
-                          className="h-3 w-3 fill-success-fg"
-                          aria-hidden
-                        />
-                        {formatUSDFull(snap.balance_sheet_impact)}
-                      </span>
-                    }
-                    bold
-                  />
-                </div>
-              </div>
+            <FactorCard
+              title="Business risk"
+              description="Current operating practices were reviewed to assess the risk of the business."
+            >
+              <KvRow
+                k="Business risk score"
+                v={capitalize(snap.risk_score)}
+              />
+              <KvRow
+                k="Impact of business risk on value"
+                v={
+                  <span className="inline-flex items-center gap-1.5 text-danger-fg">
+                    <TriangleAlert
+                      className="h-3 w-3 -rotate-180 fill-danger-fg"
+                      aria-hidden
+                    />
+                    {snap.risk_impact_pct_low}-{snap.risk_impact_pct_high}%
+                  </span>
+                }
+                bold
+              />
+            </FactorCard>
 
-              <div className="mt-6">
-                <h4 className="text-body font-medium text-text-primary">
-                  Business risk
-                </h4>
-                <p className="mt-1 text-meta text-text-secondary">
-                  Current operating practices were reviewed to assess the
-                  risk of the business.
-                </p>
-                <div className="mt-3 space-y-1">
-                  <KvRow
-                    k="Business risk score"
-                    v={capitalize(snap.risk_score)}
-                  />
-                  <KvRow
-                    k="Impact of business risk on value"
-                    v={
-                      <span className="inline-flex items-center gap-1.5 text-danger-fg">
-                        <TriangleAlert
-                          className="h-3 w-3 -rotate-180 fill-danger-fg"
-                          aria-hidden
-                        />
-                        {snap.risk_impact_pct_low}-{snap.risk_impact_pct_high}%
-                      </span>
-                    }
-                    bold
-                  />
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <h4 className="text-body font-medium text-text-primary">
-                  Industry
-                </h4>
-                <p className="mt-1 text-meta text-text-secondary">
-                  Benchmark transactions within your industry were used to
-                  identify reference multiples.
-                </p>
-                <div className="mt-3 space-y-1">
-                  <KvRow k="NAICS Code" v={snap.naics_code ?? "—"} />
-                  <KvRow
-                    k="EBITDA multiple referenced"
-                    v={snap.ebitda_multiple ? `${snap.ebitda_multiple.toFixed(2)}x` : "—"}
-                  />
-                  <KvRow
-                    k="Revenue multiple referenced"
-                    v={snap.revenue_multiple ? `${snap.revenue_multiple.toFixed(2)}x` : "—"}
-                  />
-                </div>
-              </div>
-            </StatCard>
+            <FactorCard
+              title="Industry"
+              description="Benchmark transactions within your industry were used to identify reference multiples."
+            >
+              <KvRow k="NAICS Code" v={snap.naics_code ?? "—"} />
+              <KvRow
+                k="EBITDA multiple referenced"
+                v={snap.ebitda_multiple ? `${snap.ebitda_multiple.toFixed(2)}x` : "—"}
+              />
+              <KvRow
+                k="Revenue multiple referenced"
+                v={snap.revenue_multiple ? `${snap.revenue_multiple.toFixed(2)}x` : "—"}
+              />
+            </FactorCard>
           </div>
         </div>
 
@@ -397,6 +368,24 @@ export default async function ValuationPage({
         <FooterActions />
       </div>
     </main>
+  );
+}
+
+function FactorCard({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-[10px] border border-border-subtle bg-bg-card px-5 py-4 shadow-card">
+      <h4 className="text-body font-semibold text-text-primary">{title}</h4>
+      <p className="mt-1 text-meta text-text-secondary">{description}</p>
+      <div className="mt-3 space-y-1">{children}</div>
+    </div>
   );
 }
 
