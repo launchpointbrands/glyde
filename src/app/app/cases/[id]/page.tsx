@@ -65,6 +65,7 @@ export default async function CaseOverviewPage({
     personalScore,
     businessScore,
     overallScore,
+    ebitdaGap,
   } = stats;
 
   const overallRisk = risk?.overall_risk ?? null;
@@ -103,10 +104,64 @@ export default async function CaseOverviewPage({
           resumeQ={resumeQ}
         />
 
-        {/* Body — modules left in 2x2, advisor path right */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
-          {/* LEFT — Set B module cards in 2x2 */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {/* Full-width valuation hero banner */}
+        <OverviewBanner
+          low={valuation?.valuation_low ?? null}
+          high={valuation?.valuation_high ?? null}
+          estimate={valuation?.valuation_estimate ?? null}
+          overallScore={overallScore}
+          overallRisk={overallRisk}
+          ebitdaGap={ebitdaGap}
+        />
+
+        {/* Body — advisor path left, module cards stacked right */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.5fr_1fr]">
+          {/* LEFT — Advisor path */}
+          <div>
+            <h2 className="text-section font-semibold text-text-primary">
+              Advisor path
+            </h2>
+            <p className="mt-2 max-w-xl text-meta text-text-secondary">
+              The conversations to have, in priority order. Click the
+              indicator to mark progress.
+            </p>
+
+            {pathItems.length === 0 ? (
+              <div className="mt-6 rounded-[10px] border border-dashed border-border-default bg-bg-card px-6 py-10 text-center">
+                <p className="text-body text-text-secondary">
+                  No path items yet — complete discovery to see suggested
+                  actions.
+                </p>
+                <Link
+                  href={`/app/cases/${caseId}/discovery`}
+                  className="mt-3 inline-flex items-center gap-1.5 text-meta font-medium text-green-600 transition-colors hover:text-green-800"
+                >
+                  Go to discovery <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            ) : (
+              <ul className="mt-5 divide-y divide-border-subtle rounded-[10px] border border-border-subtle bg-bg-card px-5 shadow-card">
+                {activeItems.map((item) => (
+                  <PathItemRow key={item.key} caseId={caseId} item={item} />
+                ))}
+                {doneItems.length > 0 && (
+                  <>
+                    <li className="pt-5 pb-2">
+                      <p className="text-eyebrow uppercase text-text-tertiary">
+                        Done
+                      </p>
+                    </li>
+                    {doneItems.map((item) => (
+                      <PathItemRow key={item.key} caseId={caseId} item={item} />
+                    ))}
+                  </>
+                )}
+              </ul>
+            )}
+          </div>
+
+          {/* RIGHT — module cards stacked vertically */}
+          <div className="space-y-4">
             <ModuleCard
               title="Valuation"
               href={`/app/cases/${caseId}/valuation`}
@@ -227,50 +282,6 @@ export default async function CaseOverviewPage({
               }
             />
           </div>
-
-          {/* RIGHT — Advisor path */}
-          <div>
-            <h2 className="text-section font-semibold text-text-primary">
-              Advisor path
-            </h2>
-            <p className="mt-2 max-w-xl text-meta text-text-secondary">
-              The conversations to have, in priority order. Click the
-              indicator to mark progress.
-            </p>
-
-            {pathItems.length === 0 ? (
-              <div className="mt-6 rounded-[10px] border border-dashed border-border-default bg-bg-card px-6 py-10 text-center">
-                <p className="text-body text-text-secondary">
-                  No path items yet — complete discovery to see suggested
-                  actions.
-                </p>
-                <Link
-                  href={`/app/cases/${caseId}/discovery`}
-                  className="mt-3 inline-flex items-center gap-1.5 text-meta font-medium text-green-600 transition-colors hover:text-green-800"
-                >
-                  Go to discovery <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-            ) : (
-              <ul className="mt-5 divide-y divide-border-subtle rounded-[10px] border border-border-subtle bg-bg-card px-5 shadow-card">
-                {activeItems.map((item) => (
-                  <PathItemRow key={item.key} caseId={caseId} item={item} />
-                ))}
-                {doneItems.length > 0 && (
-                  <>
-                    <li className="pt-5 pb-2">
-                      <p className="text-eyebrow uppercase text-text-tertiary">
-                        Done
-                      </p>
-                    </li>
-                    {doneItems.map((item) => (
-                      <PathItemRow key={item.key} caseId={caseId} item={item} />
-                    ))}
-                  </>
-                )}
-              </ul>
-            )}
-          </div>
         </div>
       </div>
     </main>
@@ -334,7 +345,7 @@ function ModuleCard({
   rows: { k: string; v: string }[];
 }) {
   return (
-    <StatCard className="px-5 py-4">
+    <StatCard className="px-5 py-5">
       <StatCardHeading>{title}</StatCardHeading>
       <div className="mt-4">{hero}</div>
       {rows.length > 0 && (
@@ -361,5 +372,117 @@ function ModuleCard({
         </Link>
       </div>
     </StatCard>
+  );
+}
+
+type OverviewBannerSeverity = "low" | "moderate" | "high";
+
+function OverviewBanner({
+  low,
+  high,
+  estimate,
+  overallScore,
+  overallRisk,
+  ebitdaGap,
+}: {
+  low: number | null;
+  high: number | null;
+  estimate: number | null;
+  overallScore: number | null;
+  overallRisk: OverviewBannerSeverity | null;
+  ebitdaGap: number | null;
+}) {
+  const hasRange = low != null && high != null;
+
+  const riskTone =
+    overallRisk === "high"
+      ? "text-danger-fg"
+      : overallRisk === "moderate"
+        ? "text-warning-fg"
+        : "";
+  const ebitdaTone =
+    ebitdaGap != null && ebitdaGap > 500_000 ? "text-warning-fg" : "";
+
+  return (
+    <div className="flex flex-col items-stretch gap-8 rounded-[10px] border border-border-subtle bg-bg-card px-8 py-7 shadow-card md:flex-row md:items-center md:justify-between">
+      {/* Left — valuation */}
+      <div className="min-w-0">
+        <p className="whitespace-nowrap text-[36px] font-light leading-none tracking-tight text-text-primary">
+          {hasRange ? `${formatUSD(low)} – ${formatUSD(high)}` : "—"}
+        </p>
+        <p className="mt-3 text-eyebrow uppercase text-text-tertiary">
+          Business valuation range
+        </p>
+        {estimate != null && (
+          <p className="mt-3 text-meta text-text-secondary">
+            Current estimate{" "}
+            <span className="font-mono tabular-nums text-text-primary">
+              {formatUSDFull(estimate)}
+            </span>
+          </p>
+        )}
+      </div>
+
+      {/* Right — three inline stats with vertical dividers between them */}
+      <div className="flex shrink-0 items-stretch gap-6 md:ml-auto">
+        <InlineStat
+          label="Overall readiness"
+          value={
+            overallScore != null ? (
+              <>
+                <span className="font-mono tabular-nums">{overallScore}</span>
+                <span className="ml-1 text-meta font-normal text-text-tertiary">
+                  / 100
+                </span>
+              </>
+            ) : (
+              "—"
+            )
+          }
+        />
+        <InlineStat
+          label="Business risk"
+          divider
+          value={
+            <span className={riskTone}>
+              {overallRisk ? capitalize(overallRisk) : "—"}
+            </span>
+          }
+        />
+        <InlineStat
+          label="EBITDA gap"
+          divider
+          value={
+            <span className={`font-mono tabular-nums ${ebitdaTone}`}>
+              {ebitdaGap != null ? formatUSD(ebitdaGap) : "—"}
+            </span>
+          }
+        />
+      </div>
+    </div>
+  );
+}
+
+function InlineStat({
+  label,
+  value,
+  divider,
+}: {
+  label: string;
+  value: React.ReactNode;
+  divider?: boolean;
+}) {
+  return (
+    <div
+      className={[
+        "flex flex-col justify-center",
+        divider ? "border-l border-border-subtle pl-6" : "",
+      ].join(" ")}
+    >
+      <p className="text-eyebrow uppercase text-text-tertiary">{label}</p>
+      <p className="mt-2 text-section font-medium leading-none text-text-primary">
+        {value}
+      </p>
+    </div>
   );
 }
