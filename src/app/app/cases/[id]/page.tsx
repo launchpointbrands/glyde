@@ -129,51 +129,49 @@ export default async function CaseOverviewPage({
   return (
     <main className="flex flex-1 flex-col px-10 pt-8 pb-16">
       <div className="mx-auto w-full max-w-[1120px]">
-        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Tile
-            label="Valuation range"
-            value={
-              valuation
-                ? `${formatUSD(valuation.valuation_low)} – ${formatUSD(
-                    valuation.valuation_high,
-                  )}`
-                : "—"
-            }
+        <section className="space-y-4">
+          <ValuationHero
+            low={valuation?.valuation_low ?? null}
+            high={valuation?.valuation_high ?? null}
+            estimate={valuation?.valuation_estimate ?? null}
           />
-          <Tile
-            label="Overall readiness"
-            value={
-              overallScore != null ? (
-                <span>
-                  <span>{overallScore}</span>
-                  <span className="ml-1.5 text-meta font-normal text-text-tertiary">
-                    / 100
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <Tile
+              label="Overall readiness"
+              value={
+                overallScore != null ? (
+                  <span>
+                    <span>{overallScore}</span>
+                    <span className="ml-1.5 text-meta font-normal text-text-tertiary">
+                      / 100
+                    </span>
                   </span>
-                </span>
-              ) : (
-                "—"
-              )
-            }
-          />
-          <Tile
-            label="Business risk"
-            value={overallRisk ? capitalize(overallRisk) : "—"}
-            mono={false}
-            valueClassName={
-              overallRisk === "high"
-                ? "text-danger-fg"
-                : overallRisk === "moderate"
-                  ? "text-warning-fg"
-                  : ""
-            }
-          />
-          <Tile
-            label="EBITDA gap"
-            value={ebitdaGap != null ? formatUSD(ebitdaGap) : "—"}
-            valueClassName={
-              ebitdaGap != null && ebitdaGap > 500_000 ? "text-warning-fg" : ""
-            }
-          />
+                ) : (
+                  "—"
+                )
+              }
+            />
+            <Tile
+              label="Business risk"
+              value={overallRisk ? capitalize(overallRisk) : "—"}
+              mono={false}
+              valueClassName={
+                overallRisk === "high"
+                  ? "text-danger-fg"
+                  : overallRisk === "moderate"
+                    ? "text-warning-fg"
+                    : ""
+              }
+            />
+            <Tile
+              label="EBITDA gap"
+              value={ebitdaGap != null ? formatUSD(ebitdaGap) : "—"}
+              valueClassName={
+                ebitdaGap != null && ebitdaGap > 500_000 ? "text-warning-fg" : ""
+              }
+            />
+          </div>
         </section>
 
         <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-[1.5fr_1fr]">
@@ -344,6 +342,36 @@ export default async function CaseOverviewPage({
         </div>
       </div>
     </main>
+  );
+}
+
+function ValuationHero({
+  low,
+  high,
+  estimate,
+}: {
+  low: number | null;
+  high: number | null;
+  estimate: number | null;
+}) {
+  const hasRange = low != null && high != null;
+  return (
+    <div className="rounded-[10px] border border-border-subtle bg-bg-card px-7 py-7 shadow-card">
+      <p className="whitespace-nowrap text-[38px] font-light leading-none tracking-tight text-text-primary">
+        {hasRange ? `${formatUSD(low)} – ${formatUSD(high)}` : "—"}
+      </p>
+      <p className="mt-3 text-eyebrow uppercase text-text-tertiary">
+        Business valuation range
+      </p>
+      {estimate != null && (
+        <p className="mt-3 text-meta text-text-secondary">
+          Current estimate{" "}
+          <span className="font-mono tabular-nums text-text-primary">
+            {formatUSDFull(estimate)}
+          </span>
+        </p>
+      )}
+    </div>
   );
 }
 
