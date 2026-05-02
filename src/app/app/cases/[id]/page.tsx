@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { PathItemRow } from "@/components/dashboard/path-item";
 import { SeverityHero } from "@/components/dashboard/severity-hero";
 import { StatCard, StatCardHeading } from "@/components/dashboard/stat-card";
+import { ValuationScaleBar } from "@/components/dashboard/valuation-scale-bar";
 import { getCaseStats } from "@/lib/case-stats";
 import { buildPathItems } from "@/lib/path";
 
@@ -332,7 +333,8 @@ function OverviewBanner({
         <p className="whitespace-nowrap text-[36px] font-light leading-none tracking-tight text-text-primary">
           {hasRange ? `${formatUSD(low)} – ${formatUSD(high)}` : "—"}
         </p>
-        <p className="mt-3 text-eyebrow uppercase text-text-tertiary">
+        <ValuationScaleBar currentEstimate={estimate ?? 0} />
+        <p className="text-eyebrow uppercase text-text-tertiary">
           Business valuation range
         </p>
         {estimate != null && (
