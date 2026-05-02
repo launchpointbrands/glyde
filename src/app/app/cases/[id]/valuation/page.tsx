@@ -109,7 +109,7 @@ export default async function ValuationPage({
                   <p className="text-meta text-text-secondary">
                     Business valuation range
                   </p>
-                  <p className="mt-2 text-display font-light leading-none text-text-primary tabular-nums font-mono">
+                  <p className="mt-2 whitespace-nowrap text-[36px] font-light leading-none tracking-tight text-text-primary">
                     {formatUSD(snap.valuation_low)} – {formatUSD(snap.valuation_high)}
                   </p>
                 </div>
@@ -117,7 +117,7 @@ export default async function ValuationPage({
                   <p className="text-meta text-text-secondary">
                     Current valuation estimate
                   </p>
-                  <p className="mt-2 text-display font-light leading-none text-text-primary tabular-nums font-mono">
+                  <p className="mt-2 text-[36px] font-light leading-none tabular-nums font-mono text-text-primary">
                     {formatUSDFull(snap.valuation_estimate)}
                   </p>
                 </div>
@@ -125,7 +125,7 @@ export default async function ValuationPage({
                   <p className="text-meta text-text-secondary">
                     Value of the equity you own ({ownerPct}%)
                   </p>
-                  <p className="mt-2 text-display font-light leading-none text-text-primary tabular-nums font-mono">
+                  <p className="mt-2 text-[36px] font-light leading-none tabular-nums font-mono text-text-primary">
                     {formatUSDFull(snap.equity_value_owned)}
                   </p>
                 </div>
