@@ -1,16 +1,10 @@
 import Link from "next/link";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { PathItemRow } from "@/components/dashboard/path-item";
 import { SeverityHero } from "@/components/dashboard/severity-hero";
 import { StatCard, StatCardHeading } from "@/components/dashboard/stat-card";
 import { getCaseStats } from "@/lib/case-stats";
-import {
-  STEPS,
-  TOTAL_STEPS,
-  firstStepNeedingWork,
-} from "@/lib/discovery-walkthrough";
 import { buildPathItems } from "@/lib/path";
-import { createClient } from "@/lib/supabase/server";
 
 const formatUSD = (n: number | null | undefined) => {
   if (n == null) return "—";
@@ -45,15 +39,10 @@ export default async function CaseOverviewPage({
   params: Promise<{ id: string }>;
 }) {
   const { id: caseId } = await params;
-  const supabase = await createClient();
 
-  const [stats, pathItems, { data: responses }] = await Promise.all([
+  const [stats, pathItems] = await Promise.all([
     getCaseStats(caseId),
     buildPathItems(caseId),
-    supabase
-      .from("discovery_responses")
-      .select("field_key, source, status")
-      .eq("case_id", caseId),
   ]);
 
   const {
@@ -79,31 +68,9 @@ export default async function CaseOverviewPage({
     ? PATH_TITLE[succession.selected_path] ?? "—"
     : "—";
 
-  // Discovery state for the strip at the top of the page.
-  const responseByKey = new Map(
-    (responses ?? []).map((r) => [
-      r.field_key as string,
-      { source: r.source as string, status: r.status as string },
-    ]),
-  );
-  const verifiedCount = STEPS.filter((s) => {
-    const r = responseByKey.get(s.fieldKey);
-    return r?.status === "answered" && r.source !== "simulated";
-  }).length;
-  const isComplete = verifiedCount === TOTAL_STEPS;
-  const resumeQ = firstStepNeedingWork(responseByKey);
-
   return (
     <main className="flex flex-1 flex-col px-10 pt-8 pb-16">
       <div className="mx-auto w-full max-w-[1120px] space-y-6">
-        {/* Discovery strip — full width */}
-        <DiscoveryStrip
-          caseId={caseId}
-          verifiedCount={verifiedCount}
-          isComplete={isComplete}
-          resumeQ={resumeQ}
-        />
-
         {/* Full-width valuation hero banner */}
         <OverviewBanner
           low={valuation?.valuation_low ?? null}
@@ -285,51 +252,6 @@ export default async function CaseOverviewPage({
         </div>
       </div>
     </main>
-  );
-}
-
-function DiscoveryStrip({
-  caseId,
-  verifiedCount,
-  isComplete,
-  resumeQ,
-}: {
-  caseId: string;
-  verifiedCount: number;
-  isComplete: boolean;
-  resumeQ: number;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-[10px] bg-bg-hover px-5 py-3">
-      <div className="flex items-baseline gap-3">
-        <span className="text-[10px] font-medium uppercase tracking-[0.05em] text-text-tertiary">
-          Discovery
-        </span>
-        <span className="text-[14px] text-text-secondary">
-          <span className="font-mono tabular-nums text-text-primary">
-            {verifiedCount}
-          </span>{" "}
-          of{" "}
-          <span className="font-mono tabular-nums text-text-primary">
-            {TOTAL_STEPS}
-          </span>{" "}
-          verified
-        </span>
-      </div>
-      {isComplete ? (
-        <span className="inline-flex items-center gap-1.5 text-meta text-success-fg">
-          <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-          All questions verified
-        </span>
-      ) : (
-        <Link
-          href={`/app/cases/${caseId}/discovery/walkthrough?q=${resumeQ}`}
-          className="rounded-md bg-green-400 px-3.5 py-1.5 text-meta font-medium text-text-inverse transition-colors hover:bg-green-600"
-        >
-          Continue →
-        </Link>
-      )}
-    </div>
   );
 }
 

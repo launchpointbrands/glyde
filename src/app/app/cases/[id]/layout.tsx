@@ -1,6 +1,12 @@
-import { MoreHorizontal } from "lucide-react";
+import { Check, MoreHorizontal } from "lucide-react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { NavLink } from "@/components/nav-link";
+import {
+  STEPS,
+  TOTAL_STEPS,
+  firstStepNeedingWork,
+} from "@/lib/discovery-walkthrough";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function CaseLayout({
@@ -13,13 +19,19 @@ export default async function CaseLayout({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: caseRow } = await supabase
-    .from("cases")
-    .select(
-      "id, status, client_business:client_businesses(business_name, primary_owner_name, domain)",
-    )
-    .eq("id", id)
-    .single();
+  const [{ data: caseRow }, { data: responses }] = await Promise.all([
+    supabase
+      .from("cases")
+      .select(
+        "id, status, client_business:client_businesses(business_name, primary_owner_name, domain)",
+      )
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("discovery_responses")
+      .select("field_key, source, status")
+      .eq("case_id", id),
+  ]);
 
   if (!caseRow) notFound();
 
@@ -27,10 +39,23 @@ export default async function CaseLayout({
     ? caseRow.client_business[0]
     : caseRow.client_business;
 
+  const responseByKey = new Map(
+    (responses ?? []).map((r) => [
+      r.field_key as string,
+      { source: r.source as string, status: r.status as string },
+    ]),
+  );
+  const verifiedCount = STEPS.filter((s) => {
+    const r = responseByKey.get(s.fieldKey);
+    return r?.status === "answered" && r.source !== "simulated";
+  }).length;
+  const isComplete = verifiedCount === TOTAL_STEPS;
+  const resumeQ = firstStepNeedingWork(responseByKey);
+
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-border-subtle bg-bg-card px-10 pt-8 pb-6">
-        <div className="flex items-start justify-between gap-6">
+        <div className="flex items-center justify-between gap-6">
           <div className="min-w-0 space-y-1.5">
             {cb?.primary_owner_name && (
               <p className="text-eyebrow uppercase text-text-tertiary">
@@ -44,7 +69,7 @@ export default async function CaseLayout({
               <p className="text-meta text-text-secondary">{cb.domain}</p>
             )}
           </div>
-          <div className="flex shrink-0 items-center gap-3">
+          <div className="flex shrink-0 items-center gap-4">
             <button
               type="button"
               aria-label="More actions"
@@ -52,6 +77,12 @@ export default async function CaseLayout({
             >
               <MoreHorizontal className="h-4 w-4" />
             </button>
+            <DiscoveryStatus
+              caseId={id}
+              verifiedCount={verifiedCount}
+              isComplete={isComplete}
+              resumeQ={resumeQ}
+            />
           </div>
         </div>
       </header>
@@ -65,6 +96,51 @@ export default async function CaseLayout({
       </nav>
 
       <div className="flex flex-1 flex-col">{children}</div>
+    </div>
+  );
+}
+
+function DiscoveryStatus({
+  caseId,
+  verifiedCount,
+  isComplete,
+  resumeQ,
+}: {
+  caseId: string;
+  verifiedCount: number;
+  isComplete: boolean;
+  resumeQ: number;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <p className="text-[10px] font-medium uppercase tracking-[0.05em] text-text-tertiary">
+        Discovery
+      </p>
+      {isComplete ? (
+        <p className="inline-flex items-center gap-1.5 text-meta text-success-fg">
+          <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+          Complete
+        </p>
+      ) : (
+        <>
+          <p className="text-meta text-text-secondary">
+            <span className="font-mono tabular-nums text-text-primary">
+              {verifiedCount}
+            </span>{" "}
+            of{" "}
+            <span className="font-mono tabular-nums text-text-primary">
+              {TOTAL_STEPS}
+            </span>{" "}
+            verified
+          </p>
+          <Link
+            href={`/app/cases/${caseId}/discovery/walkthrough?q=${resumeQ}`}
+            className="rounded-md bg-green-400 px-3 py-1.5 text-meta font-medium text-text-inverse transition-colors hover:bg-green-600"
+          >
+            Continue →
+          </Link>
+        </>
+      )}
     </div>
   );
 }
