@@ -53,7 +53,7 @@ export function ReadinessChecklist({
                 "text-meta",
                 it.is_complete
                   ? "text-text-secondary line-through"
-                  : "text-foreground",
+                  : "text-text-primary",
               ].join(" ")}
             >
               {it.label}

@@ -1,12 +1,12 @@
 export default function Home() {
   return (
-    <main className="flex flex-1 items-center justify-center px-8">
+    <main className="flex flex-1 items-center justify-center bg-bg-page px-8">
       <div className="max-w-md space-y-3 text-center">
-        <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
-          Glyde
-        </p>
-        <h1 className="text-2xl font-medium">Scaffolding in progress</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-eyebrow uppercase text-text-tertiary">Glyde</p>
+        <h1 className="text-section font-semibold text-text-primary">
+          Scaffolding in progress
+        </h1>
+        <p className="text-meta text-text-tertiary">
           Powered by GlydePath.ai
         </p>
       </div>

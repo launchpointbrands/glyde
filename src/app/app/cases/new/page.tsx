@@ -11,15 +11,23 @@ export default async function NewCasePage({
     <main className="flex flex-1 items-center justify-center px-8">
       <div className="w-full max-w-md space-y-6">
         <div className="space-y-1">
-          <h1 className="text-2xl font-medium">Start with a client.</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-page font-semibold text-text-primary">
+            Start with a client.
+          </h1>
+          <p className="text-meta text-text-secondary">
             Domain is enough to begin. Everything else can be filled in later.
           </p>
         </div>
 
-        <form action={createCase} className="space-y-4">
+        <form
+          action={createCase}
+          className="space-y-4 rounded-[10px] border border-border-subtle bg-bg-card px-6 py-6 shadow-card"
+        >
           <div className="space-y-2">
-            <label htmlFor="domain" className="text-sm">
+            <label
+              htmlFor="domain"
+              className="text-meta font-medium text-text-primary"
+            >
               Business domain
             </label>
             <input
@@ -29,14 +37,17 @@ export default async function NewCasePage({
               required
               autoComplete="off"
               placeholder="precisionauto.com"
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              className={inputClass}
             />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="business_name" className="text-sm">
+            <label
+              htmlFor="business_name"
+              className="text-meta font-medium text-text-primary"
+            >
               Business name{" "}
-              <span className="text-muted-foreground">(optional)</span>
+              <span className="text-text-tertiary">(optional)</span>
             </label>
             <input
               id="business_name"
@@ -44,19 +55,22 @@ export default async function NewCasePage({
               type="text"
               autoComplete="off"
               placeholder="Precision Auto Services"
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              className={inputClass}
             />
           </div>
 
           {error && (
-            <p className="text-sm text-destructive" role="alert">
+            <p
+              className="rounded-md border border-danger-border bg-danger-bg px-3 py-2 text-meta text-danger-fg"
+              role="alert"
+            >
               {error}
             </p>
           )}
 
           <button
             type="submit"
-            className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+            className="w-full rounded-md bg-green-400 px-3 py-2 text-meta font-medium text-text-inverse transition-colors hover:bg-green-600"
           >
             Create case
           </button>
@@ -65,3 +79,6 @@ export default async function NewCasePage({
     </main>
   );
 }
+
+const inputClass =
+  "w-full rounded-md border border-border-default bg-bg-input px-3 py-2 text-meta text-text-primary placeholder:text-text-tertiary transition-shadow focus:border-green-400 focus:outline-none focus:ring-[3px] focus:ring-green-50";
