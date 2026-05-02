@@ -2,6 +2,7 @@ import { TriangleAlert } from "lucide-react";
 import { DashboardEmptyState } from "@/components/dashboard/empty-state";
 import { FooterActions } from "@/components/dashboard/footer-actions";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { EditableValue } from "@/components/valuation/editable-value";
 import { createClient } from "@/lib/supabase/server";
 
 const formatUSD = (n: number | null | undefined) => {
@@ -73,7 +74,7 @@ export default async function ValuationPage({
       supabase
         .from("discovery_responses")
         .select(
-          "field_key, value, source, status, discovery_field:discovery_fields(label, help_text, choices)",
+          "field_key, value, source, status, discovery_field:discovery_fields(key, label, help_text, input_type, choices)",
         )
         .eq("case_id", caseId),
     ]);
@@ -330,7 +331,7 @@ export default async function ValuationPage({
           <h2 className="text-section font-medium text-text-primary">
             Business characteristics
           </h2>
-          <dl className="mt-6 divide-y">
+          <dl className="mt-6 divide-y divide-border-subtle">
             {(responses ?? []).map((r) => {
               const field = Array.isArray(r.discovery_field)
                 ? r.discovery_field[0]
@@ -341,10 +342,17 @@ export default async function ValuationPage({
                 label: string;
               }[];
               const display = displayResponseValue(r.value, choices);
+              const fieldKey = (field.key ?? r.field_key) as string;
+              const inputType = (field.input_type ?? "text") as
+                | "enum_single"
+                | "enum_multi"
+                | "numeric"
+                | "percentage"
+                | "text";
               return (
                 <div
                   key={r.field_key as string}
-                  className="grid grid-cols-1 gap-2 py-4 md:grid-cols-[1fr_auto] md:gap-8"
+                  className="group/row -mx-2 grid grid-cols-1 items-center gap-2 rounded-[6px] px-2 py-4 transition-colors hover:bg-bg-hover md:grid-cols-[1fr_auto] md:gap-8"
                 >
                   <div>
                     <dt className="text-meta font-medium text-text-primary">
@@ -356,8 +364,15 @@ export default async function ValuationPage({
                       </p>
                     )}
                   </div>
-                  <dd className="text-meta tabular-nums font-mono text-text-primary md:text-right">
-                    {display}
+                  <dd className="md:text-right">
+                    <EditableValue
+                      caseId={caseId}
+                      fieldKey={fieldKey}
+                      inputType={inputType}
+                      choices={choices}
+                      value={r.value}
+                      display={display}
+                    />
                   </dd>
                 </div>
               );
