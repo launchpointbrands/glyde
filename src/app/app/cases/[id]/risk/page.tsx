@@ -74,7 +74,7 @@ export default async function RiskPage({
 
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.4fr_1fr]">
           {/* LEFT — narrative */}
-          <div className="space-y-8">
+          <div className="space-y-8 rounded-[10px] border border-border-subtle bg-bg-card px-7 py-6 shadow-card">
             <section>
               <h3 className="text-section font-medium text-text-primary">
                 Why it matters to you

@@ -149,7 +149,7 @@ export default async function SuccessionPage({
 
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.4fr_1fr]">
           {/* LEFT — narrative */}
-          <div className="space-y-10">
+          <div className="space-y-10 rounded-[10px] border border-border-subtle bg-bg-card px-7 py-6 shadow-card">
             <section>
               <h2 className="text-section font-medium text-text-primary">
                 Your priorities
@@ -273,6 +273,7 @@ export default async function SuccessionPage({
         <div className="mt-16">
           <PageHeader title="Succession & Exit Readiness Score" />
 
+          <div className="rounded-[10px] border border-border-subtle bg-bg-card px-7 py-6 shadow-card">
           <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1fr_1fr_1fr]">
             <div className="flex flex-col items-center">
               <p className="text-section font-medium text-text-primary">
@@ -334,6 +335,7 @@ export default async function SuccessionPage({
                 <ReadinessChecklist caseId={caseId} items={businessItems} />
               </div>
             </div>
+          </div>
           </div>
         </div>
 

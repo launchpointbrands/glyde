@@ -258,7 +258,7 @@ export default async function ValuationPage({
               />
             </div>
 
-            <section>
+            <section className="rounded-[10px] border border-border-subtle bg-bg-card px-7 py-6 shadow-card">
               <h2 className="text-section font-medium text-text-primary">
                 Profit &amp; Loss data
               </h2>
@@ -314,7 +314,7 @@ export default async function ValuationPage({
               </p>
             </section>
 
-            <section className="mt-12">
+            <section className="mt-4 rounded-[10px] border border-border-subtle bg-bg-card px-7 py-6 shadow-card">
               <h2 className="text-section font-medium text-text-primary">
                 Balance sheet data
               </h2>
@@ -326,7 +326,7 @@ export default async function ValuationPage({
           </>
         )}
 
-        <section className="mt-12">
+        <section className="mt-4 rounded-[10px] border border-border-subtle bg-bg-card px-7 py-6 shadow-card">
           <h2 className="text-section font-medium text-text-primary">
             Business characteristics
           </h2>
