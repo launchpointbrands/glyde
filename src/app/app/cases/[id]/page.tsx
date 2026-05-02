@@ -83,19 +83,21 @@ export default async function CaseOverviewPage({
         />
 
         {/* Body — advisor path left, module cards stacked right */}
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.5fr_1fr]">
-          {/* LEFT — Advisor path */}
-          <div>
-            <h2 className="text-section font-semibold text-text-primary">
-              Advisor path
-            </h2>
-            <p className="mt-2 max-w-xl text-meta text-text-secondary">
-              The conversations to have, in priority order. Click the
-              indicator to mark progress.
-            </p>
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1.5fr_1fr]">
+          {/* LEFT — Advisor path card */}
+          <div className="rounded-[10px] border border-border-subtle bg-bg-card shadow-card">
+            <div className="border-b border-border-subtle px-5 pt-5 pb-4">
+              <h2 className="text-section font-semibold text-text-primary">
+                Advisor path
+              </h2>
+              <p className="mt-1 max-w-xl text-meta text-text-secondary">
+                The conversations to have, in priority order. Click the
+                indicator to mark progress.
+              </p>
+            </div>
 
             {pathItems.length === 0 ? (
-              <div className="mt-6 rounded-[10px] border border-dashed border-border-default bg-bg-card px-6 py-10 text-center">
+              <div className="px-6 py-10 text-center">
                 <p className="text-body text-text-secondary">
                   No path items yet — complete discovery to see suggested
                   actions.
@@ -108,7 +110,7 @@ export default async function CaseOverviewPage({
                 </Link>
               </div>
             ) : (
-              <ul className="mt-5 divide-y divide-border-subtle rounded-[10px] border border-border-subtle bg-bg-card px-5 shadow-card">
+              <ul className="divide-y divide-border-subtle px-5">
                 {activeItems.map((item) => (
                   <PathItemRow key={item.key} caseId={caseId} item={item} />
                 ))}

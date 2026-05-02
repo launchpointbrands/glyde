@@ -1,4 +1,4 @@
-import { Check, MoreHorizontal } from "lucide-react";
+import { Check } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ClientAvatar } from "@/components/clients/client-avatar";
@@ -56,13 +56,15 @@ export default async function CaseLayout({
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-border-subtle bg-bg-card px-10 pt-8 pb-6">
-        <div className="flex items-center justify-between gap-6">
-          <div className="flex min-w-0 items-center gap-4">
-            <ClientAvatar
-              businessName={cb?.business_name ?? "Unnamed business"}
-              domain={cb?.domain ?? null}
-              variant="brand"
-            />
+        <div className="flex items-start justify-between gap-6">
+          <div className="flex min-w-0 items-start gap-4">
+            <div className={cb?.primary_owner_name ? "mt-[22px]" : ""}>
+              <ClientAvatar
+                businessName={cb?.business_name ?? "Unnamed business"}
+                domain={cb?.domain ?? null}
+                variant="brand"
+              />
+            </div>
             <div className="min-w-0 space-y-1.5">
               {cb?.primary_owner_name && (
                 <p className="text-eyebrow uppercase text-text-tertiary">
@@ -85,14 +87,7 @@ export default async function CaseLayout({
               )}
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-4">
-            <button
-              type="button"
-              aria-label="More actions"
-              className="flex h-8 w-8 items-center justify-center rounded-md border border-border-default text-text-tertiary transition-colors hover:bg-bg-hover hover:text-text-primary"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </button>
+          <div className="flex shrink-0 items-center">
             <DiscoveryStatus
               caseId={id}
               verifiedCount={verifiedCount}

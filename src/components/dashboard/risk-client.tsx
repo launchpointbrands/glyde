@@ -2,7 +2,6 @@
 
 import { ChevronRight, TriangleAlert } from "lucide-react";
 import { useMemo, useState } from "react";
-import { SeverityHero } from "./severity-hero";
 import type { Severity } from "./severity-pill";
 
 export type RiskFactor = {
@@ -113,6 +112,31 @@ const FACTOR_ANSWER: Record<string, (f: RiskFactor) => FactorAnswer> = {
 
 type Tab = "all" | "high" | "moderate" | "low";
 
+// Vivid traffic-light colors used everywhere on the Risk page —
+// intentionally hex-literal so the scale reads at a glance. Other
+// surfaces that consume severity (Overview ModuleCard, etc.) keep their
+// muted semantic tokens by reusing SeverityHero unchanged.
+const RISK_TONE: Record<
+  Severity,
+  { text: string; bar: string; bgTint: string }
+> = {
+  high: {
+    text: "text-[#EF4444]",
+    bar: "bg-[#EF4444]",
+    bgTint: "bg-[#EF4444]/10",
+  },
+  moderate: {
+    text: "text-[#F59E0B]",
+    bar: "bg-[#F59E0B]",
+    bgTint: "bg-[#F59E0B]/10",
+  },
+  low: {
+    text: "text-[#22C55E]",
+    bar: "bg-[#22C55E]",
+    bgTint: "bg-[#22C55E]/10",
+  },
+};
+
 export function RiskClient({
   initialFactors,
 }: {
@@ -137,8 +161,14 @@ export function RiskClient({
             <p className="text-meta text-text-secondary">
               Business risk score
             </p>
-            <div className="mt-2">
-              <SeverityHero severity={overall} size="lg" />
+            <div className="mt-2 inline-flex items-stretch gap-3">
+              <div
+                className={`w-1.5 self-stretch rounded-sm ${RISK_TONE[overall].bar}`}
+                aria-hidden
+              />
+              <span className="text-display font-light leading-none text-text-primary capitalize">
+                {overall}
+              </span>
             </div>
           </div>
           <div>
@@ -278,9 +308,9 @@ function TabButton({
 }) {
   const badgeClass = {
     neutral: "bg-bg-hover text-text-tertiary",
-    danger: "bg-danger-bg text-danger-fg",
-    warning: "bg-warning-bg text-warning-fg",
-    success: "bg-success-bg text-success-fg",
+    danger: "bg-[#EF4444]/10 text-[#EF4444]",
+    warning: "bg-[#F59E0B]/10 text-[#F59E0B]",
+    success: "bg-[#22C55E]/10 text-[#22C55E]",
   }[variant];
 
   return (
@@ -314,16 +344,8 @@ function FactorTableRow({
   isLast: boolean;
   onToggle: () => void;
 }) {
-  const tone = {
-    high: "text-danger-fg",
-    moderate: "text-warning-fg",
-    low: "text-success-fg",
-  }[f.severity];
-  const barTone = {
-    high: "bg-danger-fg",
-    moderate: "bg-warning-fg",
-    low: "bg-success-fg",
-  }[f.severity];
+  const tone = RISK_TONE[f.severity].text;
+  const barTone = RISK_TONE[f.severity].bar;
 
   const answerFn = FACTOR_ANSWER[f.key];
   const answer = answerFn ? answerFn(f) : null;

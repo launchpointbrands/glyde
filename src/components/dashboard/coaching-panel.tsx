@@ -48,10 +48,13 @@ export function CoachingPanel({
       <button
         type="button"
         onClick={load}
-        className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-[12px] font-medium text-green-600 transition-colors hover:bg-green-100"
+        className="group/glyde mt-2 inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-[12px] font-medium text-green-600 transition-[background-color,box-shadow] duration-200 hover:bg-green-100 hover:shadow-[0_0_0_3px_var(--color-green-100)]"
       >
-        <Sparkles className="h-3.5 w-3.5 text-green-400" aria-hidden />
-        AI coaching →
+        <Sparkles
+          className="h-3.5 w-3.5 text-green-400 transition-transform duration-200 ease-out group-hover/glyde:rotate-[20deg] group-hover/glyde:scale-125"
+          aria-hidden
+        />
+        Ask Glyde →
       </button>
     );
   }
