@@ -35,14 +35,14 @@ export function ReadinessChecklist({
             type="button"
             onClick={() => toggle(it)}
             disabled={pending}
-            className="flex w-full items-center gap-3 py-3 text-left hover:bg-muted/30"
+            className="flex w-full items-center gap-3 py-3 text-left hover:bg-bg-hover"
           >
             <span
               className={[
                 "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors",
                 it.is_complete
-                  ? "border-brand-fg bg-brand-fg text-white"
-                  : "border-border",
+                  ? "border-green-400 bg-green-400 text-text-inverse"
+                  : "border-border-default",
               ].join(" ")}
               aria-hidden
             >
@@ -50,9 +50,9 @@ export function ReadinessChecklist({
             </span>
             <span
               className={[
-                "text-small",
+                "text-meta",
                 it.is_complete
-                  ? "text-muted-foreground line-through"
+                  ? "text-text-secondary line-through"
                   : "text-foreground",
               ].join(" ")}
             >

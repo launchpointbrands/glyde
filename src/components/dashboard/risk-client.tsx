@@ -154,12 +154,12 @@ export function RiskClient({
     <>
       {/* Score block */}
       <section className="pb-10">
-        <h2 className="text-heading font-medium text-ink-navy">
+        <h2 className="text-section font-medium text-text-primary">
           Business risk score
         </h2>
         <div className="mt-5 grid grid-cols-1 gap-x-12 gap-y-6 md:grid-cols-2">
           <div>
-            <p className="text-small text-muted-foreground">
+            <p className="text-meta text-text-secondary">
               Business risk score
             </p>
             <div className="mt-2">
@@ -167,10 +167,10 @@ export function RiskClient({
             </div>
           </div>
           <div>
-            <p className="text-small text-muted-foreground">
+            <p className="text-meta text-text-secondary">
               Estimated impact of risk on value
             </p>
-            <p className="mt-2 inline-flex items-center gap-3 font-display text-hero font-medium leading-none text-ink-navy tabular-nums">
+            <p className="mt-2 inline-flex items-center gap-3 text-display font-light leading-none text-text-primary tabular-nums font-mono">
               <TriangleAlert
                 className="h-7 w-7 -rotate-180 fill-danger-fg text-danger-fg"
                 aria-hidden
@@ -183,7 +183,7 @@ export function RiskClient({
 
       {/* Component risk factors */}
       <section>
-        <h2 className="text-heading font-medium text-ink-navy">
+        <h2 className="text-section font-medium text-text-primary">
           Component business risk factors
         </h2>
         <div className="mt-6 divide-y">
@@ -226,25 +226,25 @@ function FactorRow({
         className="grid w-full grid-cols-1 items-start gap-6 text-left md:grid-cols-[260px_1fr_auto] md:gap-12"
       >
         <div>
-          <p className="text-small font-medium text-ink-navy">{f.label}</p>
+          <p className="text-meta font-medium text-text-primary">{f.label}</p>
           <div className="mt-2">
             <SeverityHero severity={f.severity} size="md" />
           </div>
         </div>
         <div>
-          <p className="text-body font-medium text-ink-navy">{f.headline}</p>
-          <p className="mt-2 text-body text-muted-foreground">{f.explanation}</p>
+          <p className="text-body font-medium text-text-primary">{f.headline}</p>
+          <p className="mt-2 text-body text-text-secondary">{f.explanation}</p>
           {answer && (
             <div className="mt-4 flex items-baseline gap-3">
-              <span className="text-micro text-neutral-fg uppercase">
+              <span className="text-eyebrow text-text-tertiary uppercase">
                 {answer.eyebrow}
               </span>
-              <span className="text-small text-foreground">{answer.value}</span>
+              <span className="text-meta text-text-primary">{answer.value}</span>
             </div>
           )}
         </div>
         <ChevronDown
-          className={`mt-1 hidden h-4 w-4 shrink-0 text-muted-foreground transition-transform md:block ${
+          className={`mt-1 hidden h-4 w-4 shrink-0 text-text-secondary transition-transform md:block ${
             isOpen ? "rotate-180" : ""
           }`}
           aria-hidden
@@ -252,19 +252,19 @@ function FactorRow({
       </button>
 
       {isOpen && (
-        <div className="mt-5 ml-0 max-w-2xl rounded-md border border-border bg-muted/20 px-5 py-4 md:ml-[272px]">
+        <div className="mt-5 ml-0 max-w-2xl rounded-md border border-border-subtle bg-bg-hover px-5 py-4 md:ml-[272px]">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <button
               type="button"
               onClick={onCycleSeverity}
-              className="rounded-md border border-border bg-background px-3 py-1 text-small text-foreground hover:bg-muted/40"
+              className="rounded-md border border-border-default bg-bg-card px-3 py-1 text-meta text-text-primary transition-colors hover:bg-bg-hover"
             >
               Adjust severity →{" "}
               <span className="font-medium capitalize">
                 {nextSeverity(f.severity)}
               </span>
             </button>
-            <p className="text-small text-muted-foreground">
+            <p className="text-meta text-text-secondary">
               {projectionSentence(f.severity)}
             </p>
           </div>
