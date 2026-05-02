@@ -23,6 +23,33 @@ export const STEPS: WalkthroughStep[] = [
 
 export const TOTAL_STEPS = STEPS.length;
 
+// Section grouping powers the segmented progress bar at the top of the
+// walkthrough. Each section spans a contiguous range of question numbers.
+export type WalkthroughSection = {
+  label: string;
+  questionRange: [number, number];
+};
+
+export const SECTIONS: WalkthroughSection[] = [
+  { label: "Business",   questionRange: [1, 2] },
+  { label: "Customers",  questionRange: [3, 5] },
+  { label: "Operations", questionRange: [6, 7] },
+  { label: "Risk",       questionRange: [8, 9] },
+  { label: "Protection", questionRange: [10, 11] },
+];
+
+export type SectionState = "completed" | "current" | "upcoming";
+
+export function sectionState(
+  section: WalkthroughSection,
+  currentQ: number,
+): SectionState {
+  const [min, max] = section.questionRange;
+  if (currentQ > max) return "completed";
+  if (currentQ >= min) return "current";
+  return "upcoming";
+}
+
 export const FIELD_TO_STEP: Record<string, number> = Object.fromEntries(
   STEPS.map((s) => [s.fieldKey, s.number]),
 );

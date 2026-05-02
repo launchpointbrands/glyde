@@ -1,5 +1,6 @@
 "use client";
 
+import { Info } from "lucide-react";
 import { useState, useTransition } from "react";
 import {
   markSkipped,
@@ -34,10 +35,12 @@ export function WalkthroughQuestion({
   caseId,
   field,
   response,
+  tooltip,
 }: {
   caseId: string;
   field: Field;
   response: Response | undefined;
+  tooltip?: string;
 }) {
   const [pending, startTransition] = useTransition();
   const initial = valueAsString(response?.value);
@@ -79,8 +82,25 @@ export function WalkthroughQuestion({
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-section font-semibold text-text-primary">
+        <h2 className="text-page font-semibold leading-snug text-text-primary">
           {field.label}
+          {tooltip && (
+            <span className="group/tip relative ml-2 inline-flex align-middle">
+              <button
+                type="button"
+                aria-label="What does this mean?"
+                className="flex h-5 w-5 items-center justify-center rounded-full text-text-tertiary transition-colors hover:text-text-secondary focus:outline-none focus-visible:text-text-secondary"
+              >
+                <Info className="h-4 w-4" aria-hidden />
+              </button>
+              <span
+                role="tooltip"
+                className="pointer-events-none absolute top-full left-0 z-20 mt-2 w-72 rounded-md border border-border-subtle bg-bg-card px-3.5 py-3 text-meta leading-relaxed text-text-secondary opacity-0 shadow-card transition-opacity duration-100 group-hover/tip:opacity-100 group-focus-within/tip:opacity-100"
+              >
+                {tooltip}
+              </span>
+            </span>
+          )}
         </h2>
         {field.help_text && (
           <p className="mt-1.5 text-meta text-text-secondary">

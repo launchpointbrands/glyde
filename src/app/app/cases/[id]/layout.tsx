@@ -57,7 +57,12 @@ export default async function CaseLayout({
       </header>
       <nav className="flex items-center gap-9 border-b border-border-subtle bg-bg-card px-10">
         <NavLink href={`/app/cases/${id}`}>Overview</NavLink>
-        <NavLink href={`/app/cases/${id}/discovery`}>Discovery</NavLink>
+        <NavLink
+          href={`/app/cases/${id}/discovery`}
+          activeWhen={[`/app/cases/${id}/discovery`]}
+        >
+          Discovery
+        </NavLink>
         <NavLink href={`/app/cases/${id}/valuation`}>Valuation</NavLink>
         <NavLink href={`/app/cases/${id}/risk`}>Risk</NavLink>
         <NavLink href={`/app/cases/${id}/wealth`}>Wealth</NavLink>
