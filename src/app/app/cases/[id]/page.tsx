@@ -167,7 +167,7 @@ export default async function CaseOverviewPage({
               href={`/app/cases/${caseId}/valuation`}
               hero={
                 valuation ? (
-                  <span className="font-mono text-stat font-light tabular-nums text-text-primary">
+                  <span className="whitespace-nowrap font-mono text-stat font-light tabular-nums text-text-primary">
                     {formatUSD(valuation.valuation_low)} –{" "}
                     {formatUSD(valuation.valuation_high)}
                   </span>
