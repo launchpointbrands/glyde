@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 import { useState, useTransition } from "react";
 import {
   generateCoachingNote,
@@ -42,15 +42,16 @@ export function CoachingPanel({
     setError(null);
   }
 
-  // Idle: show the trigger link
+  // Idle: AI-pill trigger
   if (!note && !pending && !error) {
     return (
       <button
         type="button"
         onClick={load}
-        className="mt-2 text-meta font-medium text-green-600 transition-colors hover:text-green-800"
+        className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-[12px] font-medium text-green-600 transition-colors hover:bg-green-100"
       >
-        How to approach this →
+        <Sparkles className="h-3.5 w-3.5 text-green-400" aria-hidden />
+        AI coaching →
       </button>
     );
   }

@@ -88,9 +88,43 @@ const RATIONALE_BUILDERS: Record<string, (c: Ctx) => string> = {
     `${c.contactName}'s succession readiness has meaningful gaps — both personal preparation and business handoff structure need work.`,
 };
 
-function extract(text: string, re: RegExp): string {
-  const m = text.match(re);
-  return m?.[1]?.trim() ?? "";
+function stripMarkdown(text: string): string {
+  return text
+    // **bold** → bold (run before italic so the pair is consumed first)
+    .replace(/\*\*([^*\n]+?)\*\*/g, "$1")
+    // *italic* → italic
+    .replace(/\*([^*\n]+?)\*/g, "$1")
+    // Horizontal dividers (----, ---, *** etc.) on their own line
+    .replace(/^[-*]{3,}\s*$/gm, "")
+    // Collapse runs of blank lines that result from removed dividers
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function parseSections(text: string): {
+  opening: string;
+  why: string;
+  goodLooks: string;
+  objection: string;
+} {
+  const cleaned = stripMarkdown(text);
+  // Split on line-leading numbered markers (1./2./3./4. + space + capital
+  // letter). Each chunk holds exactly one section header + its content.
+  const chunks = cleaned.split(/\n\s*(?=[1-4]\.\s+[A-Z])/);
+  const sections: Record<number, string> = {};
+  for (const chunk of chunks) {
+    // Match: optional leading whitespace, the digit, dot, space, label up
+    // to the first colon (handles "WHY IT MATTERS FOR Peter:" naturally),
+    // then the body.
+    const m = chunk.match(/^\s*([1-4])\.\s+[^:\n]+:\s*([\s\S]*)$/);
+    if (m) sections[Number(m[1])] = m[2].trim();
+  }
+  return {
+    opening: sections[1] ?? "",
+    why: sections[2] ?? "",
+    goodLooks: sections[3] ?? "",
+    objection: sections[4] ?? "",
+  };
 }
 
 export async function generateCoachingNote({
@@ -283,19 +317,7 @@ Be specific to their situation. Use their name. Reference their actual numbers w
     message.content[0]?.type === "text" ? message.content[0].text : "";
 
   return {
-    opening: extract(
-      text,
-      /1\.\s*OPENING LINE:?\s*([\s\S]*?)(?=\n\s*2\.\s*WHY|$)/i,
-    ),
-    why: extract(
-      text,
-      /2\.\s*WHY IT MATTERS[^\n:]*:?\s*([\s\S]*?)(?=\n\s*3\.\s*WHAT|$)/i,
-    ),
-    goodLooks: extract(
-      text,
-      /3\.\s*WHAT GOOD LOOKS LIKE:?\s*([\s\S]*?)(?=\n\s*4\.\s*LIKELY|$)/i,
-    ),
-    objection: extract(text, /4\.\s*LIKELY OBJECTION:?\s*([\s\S]*?)$/i),
+    ...parseSections(text),
     clientName: contactName,
   };
 }
