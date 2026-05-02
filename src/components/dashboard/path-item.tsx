@@ -2,6 +2,7 @@
 
 import { Check } from "lucide-react";
 import { useTransition } from "react";
+import { CoachingPanel } from "@/components/dashboard/coaching-panel";
 import { cyclePathItemStatus } from "@/lib/path";
 import type { PathItem } from "@/lib/path-types";
 
@@ -54,6 +55,13 @@ export function PathItemRow({
         >
           {item.moduleTag}
         </p>
+        {!isDone && (
+          <CoachingPanel
+            caseId={caseId}
+            itemKey={item.key}
+            itemHeadline={item.headline}
+          />
+        )}
       </div>
     </li>
   );
