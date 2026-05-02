@@ -21,15 +21,15 @@ export function NavLink({
     <Link
       href={href}
       className={[
-        "relative py-3.5 text-[15px] transition-colors",
+        "relative py-3.5 text-body font-medium transition-colors",
         isActive
-          ? "text-foreground"
-          : "text-muted-foreground hover:text-foreground",
+          ? "text-text-primary"
+          : "text-text-secondary hover:text-text-primary",
       ].join(" ")}
     >
       {children}
       {isActive && (
-        <span className="absolute -bottom-px right-0 left-0 h-[2px] bg-ink-teal" />
+        <span className="absolute -bottom-px right-0 left-0 h-[2px] bg-green-400" />
       )}
     </Link>
   );

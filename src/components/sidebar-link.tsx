@@ -24,24 +24,23 @@ export function SidebarLink({
     <Link
       href={href}
       className={[
-        "relative flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-colors",
+        "relative flex items-center gap-3 rounded-md px-3 py-2 text-meta font-medium transition-colors",
         isActive
-          ? "bg-sidebar-accent text-foreground"
-          : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground",
+          ? "bg-green-50 text-green-800"
+          : "text-text-secondary hover:bg-bg-hover hover:text-text-primary",
       ].join(" ")}
     >
-      {isActive && (
-        <span className="absolute top-1.5 bottom-1.5 -left-3 w-[2px] rounded-r bg-ink-teal" />
-      )}
       <span
         className={[
-          "flex h-4 w-4 shrink-0 items-center justify-center",
-          isActive ? "text-foreground" : "text-muted-foreground",
+          "flex h-4 w-4 shrink-0 items-center justify-center transition-colors",
+          isActive ? "text-green-400" : "text-text-tertiary",
         ].join(" ")}
       >
         {icon}
       </span>
-      <span className="truncate">{children}</span>
+      <span className="truncate whitespace-nowrap opacity-0 transition-opacity duration-150 group-hover/sidebar:opacity-100">
+        {children}
+      </span>
     </Link>
   );
 }
