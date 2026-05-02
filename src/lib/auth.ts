@@ -26,7 +26,7 @@ export async function signUp(formData: FormData) {
   revalidatePath("/", "layout");
 
   if (data.session) {
-    redirect("/app");
+    redirect("/onboarding");
   }
 
   // Email confirmation flow (not the default in dev). Land back on /login

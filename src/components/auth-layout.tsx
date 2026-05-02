@@ -7,12 +7,19 @@ import Image from "next/image";
 export function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen w-full">
-      {/* Left — editorial. Stays dark; auth-bg.jpg + soft black overlay. */}
-      <div className="relative hidden w-[44%] shrink-0 flex-col justify-between overflow-hidden bg-cover bg-center px-12 py-10 lg:flex">
+      {/* Left — editorial. Stays dark; auth-bg.jpg + soft black overlay.
+          Background props sit in one inline style block so the URL is
+          delivered exactly as written through the production build,
+          regardless of how Tailwind class names get minified. */}
+      <div className="relative hidden w-[44%] shrink-0 flex-col justify-between overflow-hidden px-12 py-10 lg:flex">
         <div
           aria-hidden
-          className="absolute inset-0 -z-10 bg-cover bg-center"
-          style={{ backgroundImage: "url(/brand/auth-bg.jpg)" }}
+          className="absolute inset-0 -z-10"
+          style={{
+            backgroundImage: "url('/brand/auth-bg.jpg')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
         />
         <div aria-hidden className="absolute inset-0 -z-10 bg-black/20" />
 
