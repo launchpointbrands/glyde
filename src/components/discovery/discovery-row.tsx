@@ -128,7 +128,7 @@ export function DiscoveryRow({
 
   const stepNumber = FIELD_TO_STEP[field.key];
   const walkthroughHref = stepNumber
-    ? `/app/cases/${caseId}/discovery/walkthrough?step=${stepNumber}`
+    ? `/walkthrough/${caseId}?step=${stepNumber}`
     : null;
 
   return (

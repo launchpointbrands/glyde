@@ -39,7 +39,7 @@ export default async function DiscoveryPage({
   ]);
 
   if ((responses ?? []).length === 0) {
-    redirect(`/app/cases/${caseId}/discovery/walkthrough?step=1`);
+    redirect(`/walkthrough/${caseId}?step=1`);
   }
 
   if (!fields) return null;
@@ -73,7 +73,7 @@ export default async function DiscoveryPage({
     ]),
   );
   const resumeStep = firstStepNeedingWork(resumeRowsForCheck);
-  const resumeHref = `/app/cases/${caseId}/discovery/walkthrough?step=${resumeStep}`;
+  const resumeHref = `/walkthrough/${caseId}?step=${resumeStep}`;
 
   const verifyAll = verifyAllSimulated.bind(null, caseId);
   const showCompleteBanner = from === "walkthrough_complete";

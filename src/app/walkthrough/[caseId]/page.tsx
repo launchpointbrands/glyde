@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { WalkthroughQuestion } from "@/components/discovery/walkthrough-question";
@@ -27,89 +28,95 @@ export default async function WalkthroughPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ caseId: string }>;
   searchParams: Promise<{ step?: string }>;
 }) {
-  const { id: caseId } = await params;
+  const { caseId } = await params;
   const { step: stepParam } = await searchParams;
 
   const stepNum = Number(stepParam ?? 1);
   const step = getStep(stepNum);
-  if (!step) redirect(`/app/cases/${caseId}/discovery/walkthrough?step=1`);
+  if (!step) redirect(`/walkthrough/${caseId}?step=1`);
 
   const supabase = await createClient();
-  const [{ data: fields }, { data: responses }] = await Promise.all([
+  const [{ data: field }, { data: response }] = await Promise.all([
     supabase
       .from("discovery_fields")
       .select("key, label, help_text, input_type, choices")
-      .in("key", step.fieldKeys),
+      .eq("key", step.fieldKey)
+      .maybeSingle(),
     supabase
       .from("discovery_responses")
       .select("field_key, value, source, status")
       .eq("case_id", caseId)
-      .in("field_key", step.fieldKeys),
+      .eq("field_key", step.fieldKey)
+      .maybeSingle(),
   ]);
 
-  const fieldsByKey = new Map<string, FieldRow>(
-    (fields ?? []).map((f) => [f.key, f as FieldRow]),
-  );
-  const responseByKey = new Map<string, ResponseRow>(
-    (responses ?? []).map((r) => [r.field_key, r as ResponseRow]),
-  );
+  if (!field) redirect(`/walkthrough/${caseId}?step=1`);
 
-  const stepRowsForCheck = new Map(
-    Array.from(responseByKey.entries()).map(([k, r]) => [k, { status: r.status }]),
+  const typedField = field as FieldRow;
+  const typedResponse = (response as ResponseRow | null) ?? undefined;
+
+  const rowsForCheck = new Map<string, { status: string }>(
+    typedResponse
+      ? [[typedResponse.field_key, { status: typedResponse.status }]]
+      : [],
   );
-  const canAdvance = isStepComplete(step, stepRowsForCheck);
+  const canAdvance = isStepComplete(step, rowsForCheck);
 
   const isLast = step.number === TOTAL_STEPS;
   const backHref =
     step.number === 1
       ? `/app/cases/${caseId}`
-      : `/app/cases/${caseId}/discovery/walkthrough?step=${step.number - 1}`;
+      : `/walkthrough/${caseId}?step=${step.number - 1}`;
   const nextHref = isLast
     ? `/app/cases/${caseId}/discovery?from=walkthrough_complete`
-    : `/app/cases/${caseId}/discovery/walkthrough?step=${step.number + 1}`;
-
-  const orderedFields: FieldRow[] = step.fieldKeys
-    .map((k) => fieldsByKey.get(k))
-    .filter((f): f is FieldRow => Boolean(f));
+    : `/walkthrough/${caseId}?step=${step.number + 1}`;
 
   const progressPct = (step.number / TOTAL_STEPS) * 100;
 
   return (
-    <main className="flex min-h-full flex-1 flex-col bg-bg-page">
-      <div className="h-[2px] w-full bg-border-subtle">
-        <div
-          className="h-full bg-green-400 transition-all"
-          style={{ width: `${progressPct}%` }}
-          aria-hidden
+    <main className="flex min-h-screen flex-col bg-bg-page">
+      <header className="flex items-start justify-between px-10 py-7">
+        <Image
+          src="/brand/glyde-wordmark.svg"
+          alt="Glyde"
+          width={140}
+          height={28}
+          unoptimized
+          priority
+          className="h-7 w-auto"
         />
-      </div>
+        <div className="flex flex-col items-end gap-2">
+          <p className="text-eyebrow uppercase text-text-tertiary">
+            Question{" "}
+            <span className="font-mono tabular-nums text-text-primary">
+              {step.number}
+            </span>{" "}
+            of{" "}
+            <span className="font-mono tabular-nums text-text-primary">
+              {TOTAL_STEPS}
+            </span>
+          </p>
+          <div className="h-1 w-40 overflow-hidden rounded-full bg-border-subtle">
+            <div
+              className="h-full bg-green-400 transition-all"
+              style={{ width: `${progressPct}%` }}
+              aria-hidden
+            />
+          </div>
+        </div>
+      </header>
 
-      <div className="flex flex-1 items-start justify-center px-6 py-14">
+      <div className="flex flex-1 items-start justify-center px-6 py-10">
         <div className="w-full max-w-[640px]">
           <div className="rounded-[10px] border border-border-subtle bg-bg-card px-12 py-12 shadow-card">
-            <p className="text-eyebrow uppercase text-text-tertiary">
-              Step {step.number} of {TOTAL_STEPS}
-            </p>
-            <h1 className="mt-2 text-display font-light leading-[1.1] text-text-primary">
-              {step.title}
-            </h1>
-            <p className="mt-3 text-body text-text-secondary">
-              {step.intro}
-            </p>
-
-            <div className="mt-10 space-y-12">
-              {orderedFields.map((f) => (
-                <WalkthroughQuestion
-                  key={f.key}
-                  caseId={caseId}
-                  field={f}
-                  response={responseByKey.get(f.key)}
-                />
-              ))}
-            </div>
+            <WalkthroughQuestion
+              caseId={caseId}
+              field={typedField}
+              response={typedResponse}
+            />
 
             <div className="mt-12 flex items-center justify-between border-t border-border-subtle pt-6">
               <Link
@@ -129,7 +136,7 @@ export default async function WalkthroughPage({
                 <button
                   type="button"
                   disabled
-                  title="Answer, skip, or flag each question to continue"
+                  title="Answer, skip, or flag this question to continue"
                   className="cursor-not-allowed rounded-md bg-green-400 px-4 py-2 text-meta font-medium text-text-inverse opacity-40"
                 >
                   {isLast ? "Finish" : "Next →"}
