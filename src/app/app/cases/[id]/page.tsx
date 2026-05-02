@@ -65,7 +65,6 @@ export default async function CaseOverviewPage({
     personalScore,
     businessScore,
     overallScore,
-    ebitdaGap,
   } = stats;
 
   const overallRisk = risk?.overall_risk ?? null;
@@ -93,22 +92,6 @@ export default async function CaseOverviewPage({
   const isComplete = verifiedCount === TOTAL_STEPS;
   const resumeQ = firstStepNeedingWork(responseByKey);
 
-  // Severity tints for the top-row stat cards.
-  const riskTone =
-    overallRisk === "high"
-      ? "text-danger-fg"
-      : overallRisk === "moderate"
-        ? "text-warning-fg"
-        : "text-text-primary";
-  const ebitdaTone =
-    ebitdaGap != null && ebitdaGap > 500_000
-      ? "text-warning-fg"
-      : "text-text-primary";
-  const valuationRange =
-    valuation?.valuation_low != null && valuation?.valuation_high != null
-      ? `${formatUSD(valuation.valuation_low)} – ${formatUSD(valuation.valuation_high)}`
-      : "—";
-
   return (
     <main className="flex flex-1 flex-col px-10 pt-8 pb-16">
       <div className="mx-auto w-full max-w-[1120px] space-y-6">
@@ -119,54 +102,6 @@ export default async function CaseOverviewPage({
           isComplete={isComplete}
           resumeQ={resumeQ}
         />
-
-        {/* Set A — four tall summary stat cards */}
-        <div className="grid grid-cols-4 gap-3">
-          <StatCardA
-            label="Valuation range"
-            value={
-              <span className="font-mono tabular-nums text-text-primary">
-                {valuationRange}
-              </span>
-            }
-            secondary={
-              valuation?.valuation_estimate != null
-                ? `Current estimate ${formatUSDFull(valuation.valuation_estimate)}`
-                : undefined
-            }
-          />
-          <StatCardA
-            label="Overall readiness"
-            value={
-              overallScore != null ? (
-                <span className="text-text-primary">
-                  <span className="font-mono tabular-nums">{overallScore}</span>
-                  <span className="ml-1.5 text-meta font-normal text-text-tertiary">
-                    / 100
-                  </span>
-                </span>
-              ) : (
-                <span className="text-text-tertiary">—</span>
-              )
-            }
-          />
-          <StatCardA
-            label="Business risk"
-            value={
-              <span className={riskTone}>
-                {overallRisk ? capitalize(overallRisk) : "—"}
-              </span>
-            }
-          />
-          <StatCardA
-            label="EBITDA gap"
-            value={
-              <span className={`font-mono tabular-nums ${ebitdaTone}`}>
-                {ebitdaGap != null ? formatUSD(ebitdaGap) : "—"}
-              </span>
-            }
-          />
-        </div>
 
         {/* Body — modules left in 2x2, advisor path right */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
@@ -382,28 +317,6 @@ function DiscoveryStrip({
         >
           Continue →
         </Link>
-      )}
-    </div>
-  );
-}
-
-function StatCardA({
-  label,
-  value,
-  secondary,
-}: {
-  label: string;
-  value: React.ReactNode;
-  secondary?: string;
-}) {
-  return (
-    <div className="flex min-h-[120px] flex-col rounded-[10px] border border-border-subtle bg-bg-card p-5 shadow-card">
-      <p className="mb-3 text-eyebrow uppercase text-text-tertiary">{label}</p>
-      <p className="text-stat font-medium leading-none">{value}</p>
-      {secondary && (
-        <p className="mt-2 font-mono tabular-nums text-meta text-text-secondary">
-          {secondary}
-        </p>
       )}
     </div>
   );
