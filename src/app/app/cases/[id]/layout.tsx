@@ -2,12 +2,23 @@ import { Check, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { NavLink } from "@/components/nav-link";
+import { getCaseStats } from "@/lib/case-stats";
 import {
   STEPS,
   TOTAL_STEPS,
   firstStepNeedingWork,
 } from "@/lib/discovery-walkthrough";
 import { createClient } from "@/lib/supabase/server";
+
+const formatUSD = (n: number | null | undefined) => {
+  if (n == null) return "—";
+  if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(n) >= 1_000) return `$${Math.round(n / 1_000)}K`;
+  return `$${n.toLocaleString()}`;
+};
+
+const capitalize = (s: string | null | undefined) =>
+  !s ? "—" : s.charAt(0).toUpperCase() + s.slice(1);
 
 export default async function CaseLayout({
   children,
@@ -19,7 +30,7 @@ export default async function CaseLayout({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: caseRow }, { data: responses }] = await Promise.all([
+  const [{ data: caseRow }, { data: responses }, stats] = await Promise.all([
     supabase
       .from("cases")
       .select(
@@ -31,6 +42,7 @@ export default async function CaseLayout({
       .from("discovery_responses")
       .select("field_key, source, status")
       .eq("case_id", id),
+    getCaseStats(id),
   ]);
 
   if (!caseRow) notFound();
@@ -86,6 +98,15 @@ export default async function CaseLayout({
           </div>
         </div>
       </header>
+
+      <StatsBar
+        caseId={id}
+        stats={stats}
+        verifiedCount={verifiedCount}
+        isComplete={isComplete}
+        resumeQ={resumeQ}
+      />
+
       <nav className="flex items-center gap-9 border-b border-border-subtle bg-bg-card px-10">
         <NavLink href={`/app/cases/${id}`}>Overview</NavLink>
         <NavLink href={`/app/cases/${id}/valuation`}>Valuation</NavLink>
@@ -93,6 +114,7 @@ export default async function CaseLayout({
         <NavLink href={`/app/cases/${id}/wealth`}>Wealth</NavLink>
         <NavLink href={`/app/cases/${id}/succession`}>Succession</NavLink>
       </nav>
+
       <div className="flex flex-1 flex-col">{children}</div>
     </div>
   );
@@ -139,6 +161,120 @@ function DiscoveryStatus({
           </Link>
         </>
       )}
+    </div>
+  );
+}
+
+function StatsBar({
+  caseId,
+  stats,
+  verifiedCount,
+  isComplete,
+  resumeQ,
+}: {
+  caseId: string;
+  stats: Awaited<ReturnType<typeof getCaseStats>>;
+  verifiedCount: number;
+  isComplete: boolean;
+  resumeQ: number;
+}) {
+  const { valuation, risk, overallScore, ebitdaGap } = stats;
+
+  const overallRisk = risk?.overall_risk ?? null;
+  const riskTone =
+    overallRisk === "high"
+      ? "text-danger-fg"
+      : overallRisk === "moderate"
+        ? "text-warning-fg"
+        : "text-text-primary";
+  const ebitdaTone =
+    ebitdaGap != null && ebitdaGap > 500_000
+      ? "text-warning-fg"
+      : "text-text-primary";
+
+  const valuationValue =
+    valuation?.valuation_low != null && valuation?.valuation_high != null
+      ? `${formatUSD(valuation.valuation_low)} – ${formatUSD(valuation.valuation_high)}`
+      : "—";
+
+  return (
+    <div className="border-b border-border-subtle bg-bg-hover px-10 py-3">
+      <div className="grid grid-cols-5">
+        <StatCell label="Valuation range">
+          <span className="whitespace-nowrap font-medium text-text-primary">
+            {valuationValue}
+          </span>
+        </StatCell>
+        <StatCell label="Readiness" divider>
+          {overallScore != null ? (
+            <span className="text-text-primary">
+              <span className="font-mono tabular-nums font-medium">
+                {overallScore}
+              </span>
+              <span className="ml-1 font-normal text-text-tertiary">
+                / 100
+              </span>
+            </span>
+          ) : (
+            <span className="text-text-tertiary">—</span>
+          )}
+        </StatCell>
+        <StatCell label="Business risk" divider>
+          <span className={`font-medium ${riskTone}`}>
+            {overallRisk ? capitalize(overallRisk) : "—"}
+          </span>
+        </StatCell>
+        <StatCell label="EBITDA gap" divider>
+          <span className={`font-mono tabular-nums font-medium ${ebitdaTone}`}>
+            {ebitdaGap != null ? formatUSD(ebitdaGap) : "—"}
+          </span>
+        </StatCell>
+        <StatCell label="Discovery" divider>
+          <span className="inline-flex items-center gap-2 text-text-primary">
+            <span className="font-mono tabular-nums font-medium">
+              {verifiedCount} / {TOTAL_STEPS}
+            </span>
+            {isComplete ? (
+              <Check
+                className="h-4 w-4 text-success-fg"
+                strokeWidth={2.5}
+                aria-hidden
+              />
+            ) : (
+              <Link
+                href={`/app/cases/${caseId}/discovery/walkthrough?q=${resumeQ}`}
+                className="text-meta font-medium text-green-600 transition-colors hover:text-green-800"
+              >
+                Continue →
+              </Link>
+            )}
+          </span>
+        </StatCell>
+      </div>
+    </div>
+  );
+}
+
+function StatCell({
+  label,
+  divider,
+  children,
+}: {
+  label: string;
+  divider?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={[
+        "flex flex-col gap-1",
+        divider ? "border-l border-border-subtle pl-5" : "pr-5",
+      ].join(" ")}
+    >
+      <p className="text-[10px] font-medium uppercase tracking-[0.05em] text-text-tertiary">
+        {label}
+      </p>
+      <p className="text-body leading-tight">{children}</p>
     </div>
   );
 }

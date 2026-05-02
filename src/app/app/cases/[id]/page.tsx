@@ -2,10 +2,9 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { PathItemRow } from "@/components/dashboard/path-item";
 import { SeverityHero } from "@/components/dashboard/severity-hero";
-import type { Severity } from "@/components/dashboard/severity-pill";
 import { StatCard, StatCardHeading } from "@/components/dashboard/stat-card";
+import { getCaseStats } from "@/lib/case-stats";
 import { buildPathItems } from "@/lib/path";
-import { createClient } from "@/lib/supabase/server";
 
 const formatUSD = (n: number | null | undefined) => {
   if (n == null) return "—";
@@ -40,84 +39,26 @@ export default async function CaseOverviewPage({
   params: Promise<{ id: string }>;
 }) {
   const { id: caseId } = await params;
-  const supabase = await createClient();
 
-  const [
-    { data: valuation },
-    { data: risk },
-    { data: wealth },
-    { data: succession },
-    { data: readiness },
-  ] = await Promise.all([
-    supabase
-      .from("valuation_snapshots")
-      .select(
-        "valuation_low, valuation_estimate, valuation_high, ebitda_multiple, revenue_multiple, normalized_ebitda",
-      )
-      .eq("case_id", caseId)
-      .order("computed_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from("risk_assessments")
-      .select("overall_risk, factors, buy_sell_status")
-      .eq("case_id", caseId)
-      .order("computed_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from("wealth_plans")
-      .select("goal_valuation, goal_ebitda, current_risk, goal_risk")
-      .eq("case_id", caseId)
-      .order("computed_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from("succession_plans")
-      .select("selected_path")
-      .eq("case_id", caseId)
-      .order("computed_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from("readiness_items")
-      .select("category, is_complete")
-      .eq("case_id", caseId),
+  const [stats, pathItems] = await Promise.all([
+    getCaseStats(caseId),
+    buildPathItems(caseId),
   ]);
 
-  const pathItems = await buildPathItems(caseId);
+  const {
+    valuation,
+    risk,
+    wealth,
+    succession,
+    readiness,
+    personalScore,
+    businessScore,
+    overallScore,
+  } = stats;
 
-  const overallRisk = (risk?.overall_risk ?? null) as Severity | null;
-  const factors = (risk?.factors ?? []) as Array<{ severity: Severity }>;
+  const overallRisk = risk?.overall_risk ?? null;
+  const factors = risk?.factors ?? [];
   const highCount = factors.filter((f) => f.severity === "high").length;
-
-  const personalCount = (readiness ?? []).filter((r) => r.category === "personal");
-  const businessCount = (readiness ?? []).filter((r) => r.category === "business");
-  const personalScore =
-    personalCount.length === 0
-      ? 0
-      : Math.round(
-          (personalCount.filter((r) => r.is_complete).length /
-            personalCount.length) *
-            100,
-        );
-  const businessScore =
-    businessCount.length === 0
-      ? 0
-      : Math.round(
-          (businessCount.filter((r) => r.is_complete).length /
-            businessCount.length) *
-            100,
-        );
-  const overallScore =
-    personalCount.length + businessCount.length === 0
-      ? null
-      : Math.round((personalScore + businessScore) / 2);
-
-  const ebitdaGap =
-    wealth?.goal_ebitda != null && valuation?.normalized_ebitda != null
-      ? wealth.goal_ebitda - valuation.normalized_ebitda
-      : null;
 
   const activeItems = pathItems.filter((i) => i.status !== "done");
   const doneItems = pathItems.filter((i) => i.status === "done");
@@ -127,18 +68,9 @@ export default async function CaseOverviewPage({
     : "—";
 
   return (
-    <main className="flex flex-1 flex-col px-10 pt-8 pb-16">
+    <main className="flex flex-1 flex-col px-10 pt-10 pb-16">
       <div className="mx-auto w-full max-w-[1120px]">
-        <OverviewBanner
-          low={valuation?.valuation_low ?? null}
-          high={valuation?.valuation_high ?? null}
-          estimate={valuation?.valuation_estimate ?? null}
-          overallScore={overallScore}
-          overallRisk={overallRisk}
-          ebitdaGap={ebitdaGap}
-        />
-
-        <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-[1.5fr_1fr]">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.5fr_1fr]">
           {/* LEFT — Advisor path */}
           <div>
             <h2 className="text-section font-semibold text-text-primary">
@@ -238,7 +170,9 @@ export default async function CaseOverviewPage({
                       { k: "High-severity factors", v: String(highCount) },
                       {
                         k: "Buy-sell status",
-                        v: BUY_SELL_LABEL[risk.buy_sell_status] ?? "—",
+                        v: risk.buy_sell_status
+                          ? BUY_SELL_LABEL[risk.buy_sell_status] ?? "—"
+                          : "—",
                       },
                     ]
                   : []
@@ -306,116 +240,6 @@ export default async function CaseOverviewPage({
         </div>
       </div>
     </main>
-  );
-}
-
-function OverviewBanner({
-  low,
-  high,
-  estimate,
-  overallScore,
-  overallRisk,
-  ebitdaGap,
-}: {
-  low: number | null;
-  high: number | null;
-  estimate: number | null;
-  overallScore: number | null;
-  overallRisk: Severity | null;
-  ebitdaGap: number | null;
-}) {
-  const hasRange = low != null && high != null;
-
-  const riskTone =
-    overallRisk === "high"
-      ? "text-danger-fg"
-      : overallRisk === "moderate"
-        ? "text-warning-fg"
-        : "";
-  const ebitdaTone =
-    ebitdaGap != null && ebitdaGap > 500_000 ? "text-warning-fg" : "";
-
-  return (
-    <div className="flex flex-col items-stretch gap-8 rounded-[10px] border border-border-subtle bg-bg-card px-8 py-7 shadow-card md:flex-row md:items-center md:justify-between">
-      {/* Left — valuation */}
-      <div className="min-w-0">
-        <p className="whitespace-nowrap text-[36px] font-light leading-none tracking-tight text-text-primary">
-          {hasRange ? `${formatUSD(low)} – ${formatUSD(high)}` : "—"}
-        </p>
-        <p className="mt-3 text-eyebrow uppercase text-text-tertiary">
-          Business valuation range
-        </p>
-        {estimate != null && (
-          <p className="mt-3 text-meta text-text-secondary">
-            Current estimate{" "}
-            <span className="font-mono tabular-nums text-text-primary">
-              {formatUSDFull(estimate)}
-            </span>
-          </p>
-        )}
-      </div>
-
-      {/* Right — three inline stats with vertical dividers between them */}
-      <div className="flex shrink-0 items-stretch gap-6 md:ml-auto">
-        <InlineStat
-          label="Overall readiness"
-          value={
-            overallScore != null ? (
-              <>
-                <span className="font-mono tabular-nums">{overallScore}</span>
-                <span className="ml-1 text-meta font-normal text-text-tertiary">
-                  / 100
-                </span>
-              </>
-            ) : (
-              "—"
-            )
-          }
-        />
-        <InlineStat
-          label="Business risk"
-          divider
-          value={
-            <span className={riskTone}>
-              {overallRisk ? capitalize(overallRisk) : "—"}
-            </span>
-          }
-        />
-        <InlineStat
-          label="EBITDA gap"
-          divider
-          value={
-            <span className={`font-mono tabular-nums ${ebitdaTone}`}>
-              {ebitdaGap != null ? formatUSD(ebitdaGap) : "—"}
-            </span>
-          }
-        />
-      </div>
-    </div>
-  );
-}
-
-function InlineStat({
-  label,
-  value,
-  divider,
-}: {
-  label: string;
-  value: React.ReactNode;
-  divider?: boolean;
-}) {
-  return (
-    <div
-      className={[
-        "flex flex-col justify-center",
-        divider ? "border-l border-border-subtle pl-6" : "",
-      ].join(" ")}
-    >
-      <p className="text-eyebrow uppercase text-text-tertiary">{label}</p>
-      <p className="mt-2 text-section font-medium leading-none text-text-primary">
-        {value}
-      </p>
-    </div>
   );
 }
 
