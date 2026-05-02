@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AuthLayout } from "@/components/auth-layout";
+import { GoogleButton } from "@/components/google-button";
 import { signUp } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,51 +19,45 @@ export default async function SignupPage({
   const { error } = await searchParams;
 
   return (
-    <main className="flex flex-1 items-center justify-center px-8">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="space-y-1">
-          <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
-            Glyde
-          </p>
-          <h1 className="text-2xl font-medium">Create an advisor account</h1>
-          <p className="text-sm text-muted-foreground">
-            You&apos;ll be attached to Demo Firm.
+    <AuthLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-stat font-semibold leading-tight text-text-primary">
+            Create your account
+          </h1>
+          <p className="mt-1.5 text-meta text-text-tertiary">
+            Start your free advisor account
           </p>
         </div>
 
+        <GoogleButton />
+
+        <Divider label="or" />
+
         <form action={signUp} className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="full_name" className="text-sm">
-              Full name
-            </label>
+          <Field id="full_name" label="Full name">
             <input
               id="full_name"
               name="full_name"
               type="text"
               required
               autoComplete="name"
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              className={inputClass}
             />
-          </div>
+          </Field>
 
-          <div className="space-y-2">
-            <label htmlFor="email" className="text-sm">
-              Email
-            </label>
+          <Field id="email" label="Email">
             <input
               id="email"
               name="email"
               type="email"
               required
               autoComplete="email"
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              className={inputClass}
             />
-          </div>
+          </Field>
 
-          <div className="space-y-2">
-            <label htmlFor="password" className="text-sm">
-              Password
-            </label>
+          <Field id="password" label="Password">
             <input
               id="password"
               name="password"
@@ -69,32 +65,75 @@ export default async function SignupPage({
               required
               autoComplete="new-password"
               minLength={6}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              className={inputClass}
             />
-            <p className="text-xs text-muted-foreground">At least 6 characters.</p>
-          </div>
+            <p className="text-meta text-text-tertiary">
+              At least 6 characters.
+            </p>
+          </Field>
 
           {error && (
-            <p className="text-sm text-destructive" role="alert">
+            <p
+              className="rounded-md border border-danger-border bg-danger-bg px-3 py-2 text-meta text-danger-fg"
+              role="alert"
+            >
               {error}
             </p>
           )}
 
-          <button
-            type="submit"
-            className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-          >
+          <button type="submit" className={primaryButtonClass}>
             Create account
           </button>
         </form>
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-meta text-text-tertiary">
           Already have an account?{" "}
-          <Link href="/login" className="text-foreground underline">
+          <Link
+            href="/login"
+            className="font-medium text-green-600 underline underline-offset-4 transition-colors hover:text-green-800"
+          >
             Sign in
           </Link>
         </p>
       </div>
-    </main>
+    </AuthLayout>
+  );
+}
+
+const inputClass =
+  "w-full rounded-md border border-border-default bg-bg-input px-3 py-2 text-meta text-text-primary placeholder:text-text-tertiary transition-shadow focus:border-green-400 focus:outline-none focus:ring-[3px] focus:ring-green-50";
+
+const primaryButtonClass =
+  "w-full rounded-md bg-green-400 px-3 py-2.5 text-meta font-medium text-text-inverse transition-colors hover:bg-green-600";
+
+function Field({
+  id,
+  label,
+  children,
+}: {
+  id: string;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <label
+        htmlFor={id}
+        className="text-meta font-medium text-text-primary"
+      >
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function Divider({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="h-px flex-1 bg-border-subtle" />
+      <span className="text-eyebrow uppercase text-text-tertiary">{label}</span>
+      <span className="h-px flex-1 bg-border-subtle" />
+    </div>
   );
 }
