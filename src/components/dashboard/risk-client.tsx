@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, TriangleAlert } from "lucide-react";
+import { ChevronRight, TriangleAlert } from "lucide-react";
 import { useMemo, useState } from "react";
 import { SeverityHero } from "./severity-hero";
 import type { Severity } from "./severity-pill";
@@ -18,11 +18,6 @@ export type RiskFactor = {
 
 const SEVERITY_ORDER: Severity[] = ["high", "moderate", "low"];
 
-function nextSeverity(s: Severity): Severity {
-  const i = SEVERITY_ORDER.indexOf(s);
-  return SEVERITY_ORDER[(i + 1) % SEVERITY_ORDER.length];
-}
-
 function recompute(factors: RiskFactor[]): {
   overall: Severity;
   impactLow: number;
@@ -35,14 +30,6 @@ function recompute(factors: RiskFactor[]): {
   const impactLow = highs * 2.5 + mods * 1;
   const impactHigh = highs * 3.5 + mods * 1.5;
   return { overall, impactLow, impactHigh };
-}
-
-function projectionSentence(s: Severity): string {
-  const next = nextSeverity(s);
-  if (next === "low") return "Moving this to low would lift value by ~2-3%.";
-  if (next === "moderate")
-    return "Bringing this to moderate would lift value by ~1-2%.";
-  return "Letting this drift to high would cost ~2-3% of value.";
 }
 
 // Per-factor discovery-answer presentation. The signal that drove the
@@ -124,30 +111,18 @@ const FACTOR_ANSWER: Record<string, (f: RiskFactor) => FactorAnswer> = {
   }),
 };
 
+type Tab = "all" | "high" | "moderate" | "low";
+
 export function RiskClient({
   initialFactors,
 }: {
   initialFactors: RiskFactor[];
 }) {
-  const [factors, setFactors] = useState<RiskFactor[]>(initialFactors);
   const [openKey, setOpenKey] = useState<string | null>(null);
 
   const { overall, impactLow, impactHigh } = useMemo(
-    () => recompute(factors),
-    [factors],
-  );
-
-  function cycle(key: string) {
-    setFactors((prev) =>
-      prev.map((f) =>
-        f.key === key ? { ...f, severity: nextSeverity(f.severity) } : f,
-      ),
-    );
-  }
-
-  const tier = (s: Severity) => SEVERITY_ORDER.indexOf(s);
-  const sorted = [...factors].sort(
-    (a, b) => tier(a.severity) - tier(b.severity),
+    () => recompute(initialFactors),
+    [initialFactors],
   );
 
   return (
@@ -181,93 +156,197 @@ export function RiskClient({
         </div>
       </section>
 
-      {/* Component risk factors */}
-      <section>
-        <h2 className="text-section font-medium text-text-primary">
-          Component business risk factors
-        </h2>
-        <div className="mt-6 divide-y">
-          {sorted.map((f) => (
-            <FactorRow
-              key={f.key}
-              factor={f}
-              isOpen={openKey === f.key}
-              onToggle={() =>
-                setOpenKey((k) => (k === f.key ? null : f.key))
-              }
-              onCycleSeverity={() => cycle(f.key)}
-            />
-          ))}
-        </div>
-      </section>
+      <TabbedFactorTable
+        factors={initialFactors}
+        openKey={openKey}
+        onToggle={(key) => setOpenKey((k) => (k === key ? null : key))}
+      />
     </>
   );
 }
 
-function FactorRow({
+function TabbedFactorTable({
+  factors,
+  openKey,
+  onToggle,
+}: {
+  factors: RiskFactor[];
+  openKey: string | null;
+  onToggle: (key: string) => void;
+}) {
+  const [tab, setTab] = useState<Tab>("all");
+
+  const counts = {
+    all: factors.length,
+    high: factors.filter((f) => f.severity === "high").length,
+    moderate: factors.filter((f) => f.severity === "moderate").length,
+    low: factors.filter((f) => f.severity === "low").length,
+  };
+
+  const filtered =
+    tab === "all" ? factors : factors.filter((f) => f.severity === tab);
+  const sorted = [...filtered].sort(
+    (a, b) =>
+      SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity),
+  );
+
+  return (
+    <div className="overflow-hidden rounded-[10px] border border-border-subtle bg-bg-card shadow-card">
+      <div className="flex items-center gap-6 border-b border-border-subtle px-5">
+        <TabButton
+          active={tab === "all"}
+          onClick={() => setTab("all")}
+          label="All factors"
+          count={counts.all}
+          variant="neutral"
+        />
+        <TabButton
+          active={tab === "high"}
+          onClick={() => setTab("high")}
+          label="High"
+          count={counts.high}
+          variant="danger"
+        />
+        <TabButton
+          active={tab === "moderate"}
+          onClick={() => setTab("moderate")}
+          label="Moderate"
+          count={counts.moderate}
+          variant="warning"
+        />
+        <TabButton
+          active={tab === "low"}
+          onClick={() => setTab("low")}
+          label="Low"
+          count={counts.low}
+          variant="success"
+        />
+      </div>
+
+      <div>
+        {sorted.map((f, i) => (
+          <FactorTableRow
+            key={f.key}
+            factor={f}
+            isOpen={openKey === f.key}
+            isLast={i === sorted.length - 1}
+            onToggle={() => onToggle(f.key)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  label,
+  count,
+  variant,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  count: number;
+  variant: "neutral" | "danger" | "warning" | "success";
+}) {
+  const badgeClass = {
+    neutral: "bg-bg-hover text-text-tertiary",
+    danger: "bg-danger-bg text-danger-fg",
+    warning: "bg-warning-bg text-warning-fg",
+    success: "bg-success-bg text-success-fg",
+  }[variant];
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`-mb-px flex items-center gap-2 border-b-2 pb-3 pt-3 text-meta font-medium transition-colors ${
+        active
+          ? "border-text-primary text-text-primary"
+          : "border-transparent text-text-secondary hover:text-text-primary"
+      }`}
+    >
+      {label}
+      <span
+        className={`inline-flex min-w-[20px] items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-medium tabular-nums ${badgeClass}`}
+      >
+        {count}
+      </span>
+    </button>
+  );
+}
+
+function FactorTableRow({
   factor: f,
   isOpen,
+  isLast,
   onToggle,
-  onCycleSeverity,
 }: {
   factor: RiskFactor;
   isOpen: boolean;
+  isLast: boolean;
   onToggle: () => void;
-  onCycleSeverity: () => void;
 }) {
+  const tone = {
+    high: "text-danger-fg",
+    moderate: "text-warning-fg",
+    low: "text-success-fg",
+  }[f.severity];
+  const barTone = {
+    high: "bg-danger-fg",
+    moderate: "bg-warning-fg",
+    low: "bg-success-fg",
+  }[f.severity];
+
   const answerFn = FACTOR_ANSWER[f.key];
   const answer = answerFn ? answerFn(f) : null;
+  const signalText = answer ? `${answer.eyebrow} · ${answer.value}` : null;
 
   return (
-    <div className="py-7">
+    <div className={isLast ? "" : "border-b border-border-subtle"}>
       <button
         type="button"
         onClick={onToggle}
-        className="grid w-full grid-cols-1 items-start gap-6 text-left md:grid-cols-[260px_1fr_auto] md:gap-12"
+        aria-expanded={isOpen}
+        className="flex w-full items-start gap-4 px-5 py-3.5 text-left transition-colors hover:bg-bg-hover"
       >
-        <div>
-          <p className="text-meta font-medium text-text-primary">{f.label}</p>
-          <div className="mt-2">
-            <SeverityHero severity={f.severity} size="md" />
+        <div className="w-[180px] shrink-0">
+          <p className="text-meta text-text-secondary">{f.label}</p>
+          <div className="mt-1.5 flex items-center gap-2">
+            <span
+              className={`inline-block h-3.5 w-[3px] rounded-[2px] ${barTone}`}
+              aria-hidden
+            />
+            <span className={`text-meta font-medium capitalize ${tone}`}>
+              {f.severity}
+            </span>
           </div>
         </div>
-        <div>
-          <p className="text-body font-medium text-text-primary">{f.headline}</p>
-          <p className="mt-2 text-body text-text-secondary">{f.explanation}</p>
-          {answer && (
-            <div className="mt-4 flex items-baseline gap-3">
-              <span className="text-eyebrow text-text-tertiary uppercase">
-                {answer.eyebrow}
-              </span>
-              <span className="text-meta text-text-primary">{answer.value}</span>
-            </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-meta font-medium text-text-primary">
+            {f.headline}
+          </p>
+          {signalText && (
+            <p className="mt-1 text-eyebrow uppercase text-text-tertiary">
+              {signalText}
+            </p>
           )}
         </div>
-        <ChevronDown
-          className={`mt-1 hidden h-4 w-4 shrink-0 text-text-secondary transition-transform md:block ${
-            isOpen ? "rotate-180" : ""
+        <ChevronRight
+          className={`mt-0.5 h-4 w-4 shrink-0 text-text-tertiary transition-transform ${
+            isOpen ? "rotate-90" : ""
           }`}
           aria-hidden
         />
       </button>
 
       {isOpen && (
-        <div className="mt-5 ml-0 max-w-2xl rounded-md border border-border-subtle bg-bg-hover px-5 py-4 md:ml-[272px]">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <button
-              type="button"
-              onClick={onCycleSeverity}
-              className="rounded-md border border-border-default bg-bg-card px-3 py-1 text-meta text-text-primary transition-colors hover:bg-bg-hover"
-            >
-              Adjust severity →{" "}
-              <span className="font-medium capitalize">
-                {nextSeverity(f.severity)}
-              </span>
-            </button>
-            <p className="text-meta text-text-secondary">
-              {projectionSentence(f.severity)}
-            </p>
-          </div>
+        <div className="px-5 pb-4 pt-1">
+          <p className="ml-[196px] max-w-2xl text-meta text-text-secondary">
+            {f.explanation}
+          </p>
         </div>
       )}
     </div>
