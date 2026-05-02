@@ -88,7 +88,7 @@ export function CoachingPanel({
   // Loaded — show panel. If a regenerate is in flight, the old content
   // stays visible and the Regenerate link reads "Regenerating…".
   return (
-    <div className="relative mt-3 rounded-md border border-green-100 bg-green-50 px-[18px] py-4">
+    <div className="relative mt-3 rounded-md border border-green-100 bg-green-50 p-5">
       <button
         type="button"
         onClick={close}
@@ -97,17 +97,45 @@ export function CoachingPanel({
       >
         <X className="h-3 w-3" />
       </button>
-      <Section label="Opening line">{note!.opening}</Section>
-      <Section label={`Why it matters for ${note!.clientName}`}>
-        {note!.why}
-      </Section>
-      <Section label="What good looks like">{note!.goodLooks}</Section>
-      <Section label="Likely objection">{note!.objection}</Section>
+
+      <div className="divide-y divide-green-100">
+        {/* Opening line — pull-quote treatment */}
+        <div className="pb-4">
+          <SectionLabel>Opening line</SectionLabel>
+          <div className="rounded-[6px] border-l-[3px] border-green-400 bg-bg-card px-[14px] py-[10px]">
+            <p className="text-[14px] font-medium leading-[1.5] text-text-primary">
+              {note!.opening}
+            </p>
+          </div>
+        </div>
+
+        <div className="py-4">
+          <SectionLabel>Why it matters</SectionLabel>
+          <p className="text-meta leading-[1.7] text-text-primary">
+            {note!.why}
+          </p>
+        </div>
+
+        <div className="py-4">
+          <SectionLabel>What good looks like</SectionLabel>
+          <p className="text-meta leading-[1.7] text-text-primary">
+            {note!.goodLooks}
+          </p>
+        </div>
+
+        <div className="pt-4">
+          <SectionLabel>Likely objection</SectionLabel>
+          <p className="text-meta leading-[1.7] text-text-primary">
+            {note!.objection}
+          </p>
+        </div>
+      </div>
+
       <button
         type="button"
         onClick={load}
         disabled={pending}
-        className="text-[12px] text-text-tertiary transition-colors hover:text-text-primary disabled:opacity-60"
+        className="mt-4 text-[12px] text-text-tertiary transition-colors hover:text-text-primary disabled:opacity-60"
       >
         {pending ? "Regenerating…" : "Regenerate"}
       </button>
@@ -115,22 +143,11 @@ export function CoachingPanel({
   );
 }
 
-function Section({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-3 last:mb-3">
-      <p className="text-[10px] font-medium uppercase tracking-[0.06em] text-green-800">
-        {label}
-      </p>
-      <p className="mt-1 text-meta leading-relaxed text-text-primary">
-        {children}
-      </p>
-    </div>
+    <p className="mb-1.5 text-[10px] font-semibold tracking-[0.06em] text-green-800">
+      {children}
+    </p>
   );
 }
 

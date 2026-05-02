@@ -101,29 +101,66 @@ function stripMarkdown(text: string): string {
     .trim();
 }
 
-function parseSections(text: string): {
+function parseSections(rawText: string): {
   opening: string;
   why: string;
   goodLooks: string;
   objection: string;
 } {
-  const cleaned = stripMarkdown(text);
-  // Split on line-leading numbered markers (1./2./3./4. + space + capital
-  // letter). Each chunk holds exactly one section header + its content.
-  const chunks = cleaned.split(/\n\s*(?=[1-4]\.\s+[A-Z])/);
-  const sections: Record<number, string> = {};
-  for (const chunk of chunks) {
-    // Match: optional leading whitespace, the digit, dot, space, label up
-    // to the first colon (handles "WHY IT MATTERS FOR Peter:" naturally),
-    // then the body.
-    const m = chunk.match(/^\s*([1-4])\.\s+[^:\n]+:\s*([\s\S]*)$/);
-    if (m) sections[Number(m[1])] = m[2].trim();
+  const cleaned = stripMarkdown(rawText);
+
+  // Anchor on the four header strings the prompt asks for. Each regex
+  // matches the literal label followed by a colon — `WHY IT MATTERS`
+  // tolerates an optional `FOR <name>` segment so the model's natural
+  // phrasing ("WHY IT MATTERS FOR Peter:") works without a custom case.
+  const matchers = [
+    { key: "opening" as const, re: /OPENING LINE:/i },
+    { key: "why" as const, re: /WHY IT MATTERS(?:\s+FOR\s+[^\n:]+)?:/i },
+    { key: "goodLooks" as const, re: /WHAT GOOD LOOKS LIKE:/i },
+    { key: "objection" as const, re: /LIKELY OBJECTION:/i },
+  ];
+
+  const found = matchers
+    .map((m) => {
+      const match = cleaned.match(m.re);
+      return match && match.index !== undefined
+        ? { key: m.key, index: match.index, len: match[0].length }
+        : null;
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null)
+    .sort((a, b) => a.index - b.index);
+
+  const sections: Record<string, string> = {};
+  for (let i = 0; i < found.length; i++) {
+    const h = found[i];
+    const next = found[i + 1];
+    const start = h.index + h.len;
+    const end = next ? next.index : cleaned.length;
+    sections[h.key] = cleaned.slice(start, end).trim();
   }
+
+  // Fallback: if the model didn't follow the format and nothing parsed,
+  // dump the full cleaned text into `opening` so the panel still shows
+  // something readable instead of four empty rows.
+  const allEmpty =
+    !sections.opening &&
+    !sections.why &&
+    !sections.goodLooks &&
+    !sections.objection;
+  if (allEmpty) {
+    return {
+      opening: cleaned.trim(),
+      why: "",
+      goodLooks: "",
+      objection: "",
+    };
+  }
+
   return {
-    opening: sections[1] ?? "",
-    why: sections[2] ?? "",
-    goodLooks: sections[3] ?? "",
-    objection: sections[4] ?? "",
+    opening: sections.opening ?? "",
+    why: sections.why ?? "",
+    goodLooks: sections.goodLooks ?? "",
+    objection: sections.objection ?? "",
   };
 }
 
@@ -291,11 +328,19 @@ export async function generateCoachingNote({
 The conversation I need to have with them is: ${ctx.itemHeadline}
 The reason this matters: ${rationale}
 
-Give me:
-1. OPENING LINE: A natural, word-for-word suggested opening I can use to bring this up. 1-2 sentences.
-2. WHY IT MATTERS FOR ${ctx.contactName}: Connect their specific situation to why this conversation is urgent. 2-3 sentences using their actual data.
-3. WHAT GOOD LOOKS LIKE: One sentence describing where I want to land after this conversation.
-4. LIKELY OBJECTION: The most common pushback for this topic and a brief suggested response. 2-3 sentences.
+Format your response using exactly these four section headers, each on its own line, followed immediately by the content on the next line. Use plain text only — no asterisks, no markdown, no bullet points, no dashes:
+
+OPENING LINE:
+[1-2 sentences — a natural, word-for-word opening I can use to bring this up]
+
+WHY IT MATTERS FOR ${ctx.contactName}:
+[2-3 sentences using their actual data, connecting their specific situation to why this conversation is urgent]
+
+WHAT GOOD LOOKS LIKE:
+[one sentence describing where I want to land after this conversation]
+
+LIKELY OBJECTION:
+[2-3 sentences — the most common pushback for this topic and a brief suggested response]
 
 Be specific to their situation. Use their name. Reference their actual numbers where relevant.`;
 
@@ -315,6 +360,10 @@ Be specific to their situation. Use their name. Reference their actual numbers w
 
   const text =
     message.content[0]?.type === "text" ? message.content[0].text : "";
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[coaching] raw response:\n", text);
+  }
 
   return {
     ...parseSections(text),
