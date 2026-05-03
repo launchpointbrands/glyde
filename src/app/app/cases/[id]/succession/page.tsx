@@ -133,12 +133,21 @@ export default async function SuccessionPage({
     else businessItems.push(enriched);
   }
 
-  const score = (xs: ReadinessItem[]) =>
-    xs.length === 0
-      ? 0
-      : Math.round((xs.filter((x) => x.is_complete).length / xs.length) * 100);
-  const personalScore = score(personalItems);
-  const businessScore = score(businessItems);
+  // Readiness floor — donuts never show 0/100. When discovery is
+  // partially complete the score is a weighted blend of the actual
+  // completion rate and the floor for that category.
+  const score = (xs: ReadinessItem[], floor: number): number => {
+    const total = xs.length;
+    if (total === 0) return floor;
+    const completed = xs.filter((x) => x.is_complete).length;
+    if (completed === 0) return floor;
+    const actual = (completed / total) * 100;
+    return Math.round(
+      (completed / total) * actual + ((total - completed) / total) * floor,
+    );
+  };
+  const personalScore = score(personalItems, 40);
+  const businessScore = score(businessItems, 30);
   const overallScore = Math.round((personalScore + businessScore) / 2);
 
   const path = plan.selected_path ?? "family";

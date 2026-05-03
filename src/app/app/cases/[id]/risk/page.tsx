@@ -1,6 +1,7 @@
 import { Building2, ScrollText, Users } from "lucide-react";
 import { FooterActions } from "@/components/dashboard/footer-actions";
 import { GeneratingReport } from "@/components/dashboard/generating-report";
+import { KeyRisksCard } from "@/components/dashboard/key-risks-card";
 import { PageHeader } from "@/components/dashboard/page-header";
 import {
   RiskClient,
@@ -47,15 +48,32 @@ export default async function RiskPage({
 
   const supabase = await createClient();
 
-  const { data: assessment } = await supabase
-    .from("risk_assessments")
-    .select(
-      "overall_risk, factors, buy_sell_status, equity_at_risk_value, risk_to_equity, valuation_snapshot_id",
-    )
-    .eq("case_id", caseId)
-    .order("computed_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const [{ data: assessment }, { data: valuation }, { data: caseRow }] =
+    await Promise.all([
+      supabase
+        .from("risk_assessments")
+        .select(
+          "overall_risk, factors, buy_sell_status, risk_to_equity, valuation_snapshot_id",
+        )
+        .eq("case_id", caseId)
+        .order("computed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("valuation_snapshots")
+        .select("equity_value_owned")
+        .eq("case_id", caseId)
+        .order("computed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("cases")
+        .select(
+          "client_business:client_businesses(contact_name, primary_owner_name)",
+        )
+        .eq("id", caseId)
+        .single(),
+    ]);
 
   if (!assessment) {
     return <GeneratingReport title="Business Risk Assessment" />;
@@ -66,6 +84,21 @@ export default async function RiskPage({
   const buySellSeverity =
     BUY_SELL_SEVERITY[buySellStatus] ?? ("moderate" as Severity);
 
+  // Equity figure reads from valuation_snapshots — single source of truth
+  // for valuation. risk_assessments.equity_at_risk_value is no longer
+  // referenced here so it can't drift if the valuation gets updated.
+  const equityValueOwned = valuation?.equity_value_owned ?? null;
+
+  const cb = Array.isArray(caseRow?.client_business)
+    ? caseRow.client_business[0]
+    : caseRow?.client_business;
+  const contactFirstName =
+    ((cb?.contact_name as string | null | undefined) ??
+      (cb?.primary_owner_name as string | null | undefined) ??
+      "the owner")
+      .trim()
+      .split(/\s+/)[0] ?? "the owner";
+
   return (
     <main className="flex flex-1 flex-col px-5 pt-8 pb-12 md:px-10 md:pt-10 md:pb-16">
       <div className="mx-auto w-full max-w-[1100px]">
@@ -73,6 +106,8 @@ export default async function RiskPage({
           title="Business Risk Assessment"
           subtitle="A review of the risk factors that impact the marketability and valuation of your business."
         />
+
+        <KeyRisksCard factors={factors} contactName={contactFirstName} />
 
         <RiskClient initialFactors={factors} />
 
@@ -163,7 +198,7 @@ export default async function RiskPage({
                 Value of equity owned
               </p>
               <p className="mt-3 text-display font-light leading-none text-text-primary tabular-nums font-mono">
-                {formatUSDFull(assessment.equity_at_risk_value)}
+                {formatUSDFull(equityValueOwned)}
               </p>
             </StatCard>
 

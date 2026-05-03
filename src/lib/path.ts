@@ -47,9 +47,48 @@ const formatUSDShort = (n: number) => {
 };
 
 function firstName(full: string | null | undefined): string {
-  if (!full) return "the owner";
+  if (!full) return "your client";
   const trimmed = full.trim();
-  return trimmed.split(/\s+/)[0] ?? "the owner";
+  return trimmed.split(/\s+/)[0] ?? "your client";
+}
+
+// Always-available baseline path items shown when the discovery-driven
+// triggers haven't produced enough work yet. Keeps the advisor's path
+// from ever being empty — even on a brand-new case before discovery
+// has happened.
+function baselineItems(contactName: string): Omit<PathItem, "status">[] {
+  return [
+    {
+      key: "baseline_discovery",
+      priority: "high",
+      headline: `Schedule a discovery conversation with ${contactName}`,
+      moduleTag: "Overview · Getting started",
+    },
+    {
+      key: "baseline_exit_timeline",
+      priority: "high",
+      headline: `Understand ${contactName}'s exit timeline and personal financial goals`,
+      moduleTag: "Wealth · Goals",
+    },
+    {
+      key: "baseline_legal_structure",
+      priority: "medium",
+      headline: "Review the business's current legal and ownership structure",
+      moduleTag: "Risk · Business structure",
+    },
+    {
+      key: "baseline_succession",
+      priority: "medium",
+      headline: "Discuss succession intentions — family, sale, or other?",
+      moduleTag: "Succession · Planning",
+    },
+    {
+      key: "baseline_advisors",
+      priority: "low",
+      headline: "Identify key advisors already in the client's professional network",
+      moduleTag: "Overview · Team",
+    },
+  ];
 }
 
 // Build the eligible path items for a case from discovery + module data.
@@ -72,7 +111,9 @@ export async function buildPathItems(caseId: string): Promise<PathItem[]> {
       .eq("case_id", caseId),
     supabase
       .from("cases")
-      .select("client_business:client_businesses(primary_owner_name)")
+      .select(
+        "client_business:client_businesses(primary_owner_name, contact_name)",
+      )
       .eq("id", caseId)
       .single(),
     supabase
@@ -109,7 +150,10 @@ export async function buildPathItems(caseId: string): Promise<PathItem[]> {
   const cb = Array.isArray(caseRow?.client_business)
     ? caseRow.client_business[0]
     : caseRow?.client_business;
-  const owner = firstName(cb?.primary_owner_name);
+  const owner = firstName(
+    (cb?.contact_name as string | null | undefined) ??
+      (cb?.primary_owner_name as string | null | undefined),
+  );
 
   const statusByKey = new Map<string, PathStatus>();
   for (const s of states ?? []) {
@@ -217,6 +261,18 @@ export async function buildPathItems(caseId: string): Promise<PathItem[]> {
         headline: `Begin formalizing the ${pathLabel} structure`,
         moduleTag: "Succession · Readiness",
         status: statusByKey.get("succession_readiness") ?? "todo",
+      });
+    }
+  }
+
+  // Path must never be empty. If discovery hasn't produced enough
+  // triggered items, fold in the baseline list — these are always-
+  // applicable conversations to schedule when the case is new.
+  if (items.length < 2) {
+    for (const baseline of baselineItems(owner)) {
+      items.push({
+        ...baseline,
+        status: statusByKey.get(baseline.key) ?? "todo",
       });
     }
   }
