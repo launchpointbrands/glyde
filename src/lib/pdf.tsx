@@ -1,12 +1,24 @@
 import type { DocumentProps } from "@react-pdf/renderer";
 import { renderToBuffer } from "@react-pdf/renderer";
 import type { ReactElement } from "react";
-import { PlaceholderDocument } from "@/components/pdf/pdf-placeholder";
+import {
+  RiskDocument,
+  type RiskReportData,
+} from "@/components/pdf/pdf-risk";
+import {
+  SuccessionDocument,
+  type SuccessionReportData,
+} from "@/components/pdf/pdf-succession";
 import {
   ValuationDocument,
   type ValuationReportData,
 } from "@/components/pdf/pdf-valuation";
+import {
+  WealthDocument,
+  type WealthReportData,
+} from "@/components/pdf/pdf-wealth";
 import { ensureFinancials } from "@/lib/financials";
+import { evaluateRiskFactors } from "@/lib/risk";
 import { createClient } from "@/lib/supabase/server";
 
 export type ReportType = "valuation" | "risk" | "wealth" | "succession";
@@ -163,6 +175,182 @@ async function loadValuationData(
   };
 }
 
+async function loadRiskData(caseId: string): Promise<RiskReportData> {
+  try {
+    await ensureFinancials({ caseId });
+    await evaluateRiskFactors(caseId);
+  } catch (e) {
+    console.error("ensureFinancials/evaluateRiskFactors (pdf risk) failed", e);
+  }
+
+  const ctx = await loadCommonContext(caseId);
+
+  const [{ data: assessment }, { data: snap }] = await Promise.all([
+    ctx.supabase
+      .from("risk_assessments")
+      .select(
+        "overall_risk, factors, buy_sell_status, risk_to_equity",
+      )
+      .eq("case_id", caseId)
+      .order("computed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    ctx.supabase
+      .from("valuation_snapshots")
+      .select("equity_value_owned, risk_impact_pct_low, risk_impact_pct_high")
+      .eq("case_id", caseId)
+      .order("computed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  return {
+    contactName: ctx.contactName,
+    businessName: ctx.businessName,
+    advisorName: ctx.advisorName,
+    advisorTitle: ctx.advisorTitle,
+    preparedAt: todayLong(),
+    overallRisk: (assessment?.overall_risk as string | null) ?? "moderate",
+    riskImpactLow: (snap?.risk_impact_pct_low as number | null) ?? 3,
+    riskImpactHigh: (snap?.risk_impact_pct_high as number | null) ?? 6,
+    factors: (assessment?.factors ?? []) as RiskReportData["factors"],
+    buySellStatus: (assessment?.buy_sell_status as string | null) ?? "none",
+    equityValueOwned: (snap?.equity_value_owned as number | null) ?? null,
+  };
+}
+
+async function loadWealthData(caseId: string): Promise<WealthReportData> {
+  try {
+    await ensureFinancials({ caseId });
+  } catch (e) {
+    console.error("ensureFinancials (pdf wealth) failed", e);
+  }
+
+  const ctx = await loadCommonContext(caseId);
+
+  const [{ data: plan }, { data: snap }] = await Promise.all([
+    ctx.supabase
+      .from("wealth_plans")
+      .select(
+        "net_proceeds_target, exit_year, target_age, goal_valuation, goal_ebitda, historic_avg_revenue_growth, goal_revenue_growth, current_risk, goal_risk, historic_ebitda_series",
+      )
+      .eq("case_id", caseId)
+      .order("computed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    ctx.supabase
+      .from("valuation_snapshots")
+      .select("valuation_estimate, normalized_ebitda")
+      .eq("case_id", caseId)
+      .order("computed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  const exitYear = (plan?.exit_year as number | null) ?? null;
+  const yearsToExit =
+    exitYear != null ? Math.max(exitYear - new Date().getFullYear(), 0) : null;
+
+  return {
+    contactName: ctx.contactName,
+    businessName: ctx.businessName,
+    advisorName: ctx.advisorName,
+    advisorTitle: ctx.advisorTitle,
+    preparedAt: todayLong(),
+    netProceedsTarget: (plan?.net_proceeds_target as number | null) ?? null,
+    goalValuation: (plan?.goal_valuation as number | null) ?? null,
+    goalEbitda: (plan?.goal_ebitda as number | null) ?? null,
+    exitYear,
+    targetAge: (plan?.target_age as number | null) ?? null,
+    yearsToExit,
+    historicAvgRevenueGrowth:
+      (plan?.historic_avg_revenue_growth as number | null) ?? null,
+    goalRevenueGrowth: (plan?.goal_revenue_growth as number | null) ?? null,
+    currentRisk: (plan?.current_risk as string | null) ?? null,
+    goalRisk: (plan?.goal_risk as string | null) ?? null,
+    currentValuation: (snap?.valuation_estimate as number | null) ?? null,
+    normalizedEbitda: (snap?.normalized_ebitda as number | null) ?? null,
+    historicSeries: ((plan?.historic_ebitda_series ??
+      []) as { year: number; value: number }[]),
+  };
+}
+
+async function loadSuccessionData(
+  caseId: string,
+): Promise<SuccessionReportData> {
+  try {
+    await ensureFinancials({ caseId });
+  } catch (e) {
+    console.error("ensureFinancials (pdf succession) failed", e);
+  }
+
+  const ctx = await loadCommonContext(caseId);
+
+  const [{ data: plan }, { data: items }, { data: ref }] = await Promise.all([
+    ctx.supabase
+      .from("succession_plans")
+      .select("selected_path, priorities")
+      .eq("case_id", caseId)
+      .order("computed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    ctx.supabase
+      .from("readiness_items")
+      .select("item_key, is_complete")
+      .eq("case_id", caseId),
+    ctx.supabase
+      .from("readiness_item_reference")
+      .select("key, category, label, display_order")
+      .order("display_order"),
+  ]);
+
+  const itemByKey = new Map(
+    (items ?? []).map((it) => [
+      it.item_key as string,
+      Boolean(it.is_complete),
+    ]),
+  );
+  const personalItems: { label: string; is_complete: boolean }[] = [];
+  const businessItems: { label: string; is_complete: boolean }[] = [];
+  for (const r of ref ?? []) {
+    const enriched = {
+      label: r.label as string,
+      is_complete: itemByKey.get(r.key as string) ?? false,
+    };
+    if (r.category === "personal") personalItems.push(enriched);
+    else businessItems.push(enriched);
+  }
+
+  const score = (xs: typeof personalItems, floor: number): number => {
+    const total = xs.length;
+    if (total === 0) return floor;
+    const completed = xs.filter((x) => x.is_complete).length;
+    if (completed === 0) return floor;
+    const actual = (completed / total) * 100;
+    return Math.round(
+      (completed / total) * actual + ((total - completed) / total) * floor,
+    );
+  };
+  const personalScore = score(personalItems, 40);
+  const businessScore = score(businessItems, 30);
+  const overallScore = Math.round((personalScore + businessScore) / 2);
+
+  return {
+    contactName: ctx.contactName,
+    businessName: ctx.businessName,
+    advisorName: ctx.advisorName,
+    advisorTitle: ctx.advisorTitle,
+    preparedAt: todayLong(),
+    selectedPath: (plan?.selected_path as string | null) ?? null,
+    priorities: (plan?.priorities ?? []) as string[],
+    personalScore,
+    businessScore,
+    overallScore,
+    personalItems,
+    businessItems,
+  };
+}
+
 export async function renderReport(
   caseId: string,
   type: ReportType,
@@ -174,21 +362,18 @@ export async function renderReport(
     const data = await loadValuationData(caseId);
     businessName = data.businessName;
     doc = <ValuationDocument {...data} />;
+  } else if (type === "risk") {
+    const data = await loadRiskData(caseId);
+    businessName = data.businessName;
+    doc = <RiskDocument {...data} />;
+  } else if (type === "wealth") {
+    const data = await loadWealthData(caseId);
+    businessName = data.businessName;
+    doc = <WealthDocument {...data} />;
   } else {
-    // Risk / Wealth / Succession render the placeholder for now.
-    const ctx = await loadCommonContext(caseId);
-    businessName = ctx.businessName;
-    doc = (
-      <PlaceholderDocument
-        reportTitle={REPORT_TITLES[type]}
-        contactName={ctx.contactName}
-        businessName={ctx.businessName}
-        advisorName={ctx.advisorName}
-        advisorTitle={ctx.advisorTitle}
-        preparedAt={todayLong()}
-        reportType={REPORT_TITLES[type]}
-      />
-    );
+    const data = await loadSuccessionData(caseId);
+    businessName = data.businessName;
+    doc = <SuccessionDocument {...data} />;
   }
 
   const buffer = await renderToBuffer(doc);
