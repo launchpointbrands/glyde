@@ -189,13 +189,23 @@ function deriveValuation(est: FinancialEstimates, ownershipPct: number) {
   const v_ebitda = est.ebitda * est.ebitda_multiple;
   const v_revenue = est.revenue_ttm * est.revenue_multiple;
   const v_income = (v_ebitda + v_revenue) / 2;
-  const valuation_estimate = Math.round((v_ebitda + v_revenue + v_income) / 3);
-  const valuation_low = Math.round(valuation_estimate * 0.85);
-  const valuation_high = Math.round(valuation_estimate * 1.15);
-  const equity_value_owned = Math.round(
+  let valuation_estimate = Math.round((v_ebitda + v_revenue + v_income) / 3);
+  let valuation_low = Math.round(valuation_estimate * 0.85);
+  let valuation_high = Math.round(valuation_estimate * 1.15);
+  let equity_value_owned = Math.round(
     (valuation_estimate * ownershipPct) / 100,
   );
   const balance_sheet_impact = est.working_capital - est.total_debt;
+
+  // Sanity: high must exceed low; equity cannot exceed full estimate.
+  if (valuation_high <= valuation_low) {
+    valuation_high = Math.round(valuation_estimate * 1.15);
+    valuation_low = Math.round(valuation_estimate * 0.85);
+  }
+  if (equity_value_owned > valuation_estimate) {
+    equity_value_owned = valuation_estimate;
+  }
+
   return {
     valuation_low,
     valuation_estimate,
@@ -203,12 +213,6 @@ function deriveValuation(est: FinancialEstimates, ownershipPct: number) {
     equity_value_owned,
     balance_sheet_impact,
   };
-}
-
-function deriveRiskScore(est: FinancialEstimates): "low" | "moderate" | "high" {
-  if (est.ebitda_multiple >= 8) return "low";
-  if (est.ebitda_multiple <= 4) return "high";
-  return "moderate";
 }
 
 function buildHistoricEbitdaSeries(currentEbitda: number, growthRate: number) {
@@ -344,11 +348,13 @@ export async function ensureFinancials({
   }
 
   const v = deriveValuation(estimates, ownershipPct);
-  const riskScore = deriveRiskScore(estimates);
-  const riskImpactLow =
-    riskScore === "low" ? 0 : riskScore === "moderate" ? 4 : 10;
-  const riskImpactHigh =
-    riskScore === "low" ? 2 : riskScore === "moderate" ? 6 : 15;
+  // Risk should be evaluated from discovery factors, never inferred from
+  // EBITDA multiple. Until a discovery-driven evaluator exists, default
+  // to a conservative 'moderate' / 3-6% impact for new cases — matches
+  // how the dashboards render an empty-factors state.
+  const riskScore: "low" | "moderate" | "high" = "moderate";
+  const riskImpactLow = 3;
+  const riskImpactHigh = 6;
 
   // 1. valuation_snapshots
   let valuationSnapshotId: string | null = (snap?.id as string | null) ?? null;
@@ -404,9 +410,19 @@ export async function ensureFinancials({
 
   // 3. wealth_plans
   if (!wealth) {
-    const goalEbitda = Math.round(estimates.ebitda * 1.5);
-    const goalValuation = Math.round(v.valuation_estimate * 1.3);
-    const netProceedsTarget = Math.round(goalValuation * 0.7);
+    // Wealth guardrails — goal valuation must be at least 1.2x current,
+    // goal EBITDA must strictly exceed current, net proceeds must be
+    // positive. These can never reverse polarity regardless of what the
+    // AI returned.
+    const goalValuation = Math.max(
+      Math.round(v.valuation_estimate * 1.3),
+      Math.round(v.valuation_estimate * 1.2),
+    );
+    let goalEbitda = Math.round(estimates.ebitda * 1.5);
+    if (goalEbitda <= estimates.ebitda) {
+      goalEbitda = Math.round(estimates.ebitda * 1.3) + 1;
+    }
+    const netProceedsTarget = Math.max(1, Math.round(goalValuation * 0.7));
     const goalRevenueGrowth = Math.max(estimates.revenue_growth_rate, 0.1);
     const exitYear = new Date().getFullYear() + 7;
     const { error } = await supabase.from("wealth_plans").insert({
