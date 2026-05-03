@@ -1,190 +1,143 @@
 "use client";
 
-import { Building2, Sparkles } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import {
   completeOnboardingWithClient,
-  completeOnboardingWithDemo,
+  skipOnboarding,
 } from "@/lib/onboarding";
 
-type Choice = "demo" | "manual";
-
 export function OnboardingStep2({ error }: { error?: string }) {
-  const [choice, setChoice] = useState<Choice>("demo");
   const [pending, startTransition] = useTransition();
 
   function handleSubmit(formData: FormData) {
     startTransition(() => {
-      if (choice === "demo") {
-        completeOnboardingWithDemo().catch((e) =>
-          console.error("completeOnboardingWithDemo failed", e),
-        );
-      } else {
-        completeOnboardingWithClient(formData).catch((e) =>
-          console.error("completeOnboardingWithClient failed", e),
-        );
-      }
+      completeOnboardingWithClient(formData).catch((e) =>
+        console.error("completeOnboardingWithClient failed", e),
+      );
+    });
+  }
+
+  function handleSkip() {
+    startTransition(() => {
+      skipOnboarding().catch((e) =>
+        console.error("skipOnboarding failed", e),
+      );
     });
   }
 
   return (
-    <form action={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <ChoiceCardA
-          selected={choice === "demo"}
-          onSelect={() => setChoice("demo")}
-        />
-        <ChoiceCardB
-          selected={choice === "manual"}
-          onSelect={() => setChoice("manual")}
-        />
-      </div>
-
-      {choice === "manual" && (
-        <div className="space-y-4 rounded-[10px] border border-border-subtle bg-bg-card px-6 py-5 shadow-card">
-          <Field id="business_name" label="Business name">
-            <input
-              id="business_name"
-              name="business_name"
-              type="text"
-              required
-              autoComplete="off"
-              placeholder="Precision Auto Services"
-              className={inputClass}
-            />
-          </Field>
-          <Field id="domain" label="Business domain">
-            <input
-              id="domain"
-              name="domain"
-              type="text"
-              required
-              autoComplete="off"
-              placeholder="precisionauto.com"
-              className={inputClass}
-            />
-          </Field>
-        </div>
-      )}
-
-      {error && (
-        <p
-          className="rounded-md border border-danger-border bg-danger-bg px-3 py-2 text-meta text-danger-fg"
-          role="alert"
-        >
-          {error}
-        </p>
-      )}
-
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-md bg-green-400 px-3 py-2.5 text-meta font-medium text-text-inverse transition-colors hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60"
+    <div className="space-y-5">
+      <form
+        action={handleSubmit}
+        className="rounded-[12px] border border-border-subtle bg-bg-card p-7 shadow-card"
       >
-        {pending ? "Setting up…" : "Get started →"}
-      </button>
-    </form>
-  );
-}
+        <p className="text-[11px] font-medium tracking-[0.05em] text-text-tertiary uppercase">
+          About the business
+        </p>
 
-function ChoiceCardA({
-  selected,
-  onSelect,
-}: {
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <Card selected={selected} onSelect={onSelect}>
-      <div className="flex items-start justify-between gap-2">
-        <span className="flex h-9 w-9 items-center justify-center rounded-md bg-green-50 text-green-600">
-          <Sparkles className="h-4 w-4" />
-        </span>
-        <span className="rounded-full border border-success-border bg-success-bg px-2.5 py-[2px] text-eyebrow font-medium uppercase text-success-fg">
-          Recommended
-        </span>
+        <div className="mt-3 flex flex-col gap-3">
+          <Field
+            id="business_name"
+            label="Business name"
+            placeholder="Precision Auto Services"
+            autoComplete="organization"
+          />
+          <Field
+            id="domain"
+            label="Business domain"
+            required
+            placeholder="precisionauto.com"
+            autoComplete="off"
+          />
+        </div>
+
+        <p className="mt-5 text-[11px] font-medium tracking-[0.05em] text-text-tertiary uppercase">
+          About the client
+        </p>
+
+        <div className="mt-3 flex flex-col gap-3">
+          <Field
+            id="contact_name"
+            label="Full name"
+            placeholder="Peter Smith"
+            autoComplete="name"
+          />
+          <Field
+            id="contact_email"
+            label="Email address"
+            type="email"
+            placeholder="peter@theirbusiness.com"
+            autoComplete="email"
+          />
+        </div>
+
+        {error ? (
+          <p
+            role="alert"
+            className="mt-5 rounded-md border border-danger-border bg-danger-bg px-3 py-2 text-[13px] text-danger-text"
+          >
+            {error}
+          </p>
+        ) : null}
+
+        <button
+          type="submit"
+          disabled={pending}
+          className="mt-6 w-full rounded-[8px] bg-green-400 px-4 py-2.5 text-[14px] font-medium text-text-inverse transition-colors hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {pending ? "Setting up…" : "Create client →"}
+        </button>
+      </form>
+
+      <div className="text-center">
+        <button
+          type="button"
+          onClick={handleSkip}
+          disabled={pending}
+          className="text-[13px] text-text-tertiary transition-colors hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Skip for now →
+        </button>
       </div>
-      <p className="mt-4 text-body font-semibold text-text-primary">
-        Load a sample case
-      </p>
-      <p className="mt-1.5 text-meta text-text-secondary">
-        Explore Glyde with Peter Smith and Precision Auto Services — a
-        pre-built demo case that shows every module.
-      </p>
-    </Card>
+    </div>
   );
 }
-
-function ChoiceCardB({
-  selected,
-  onSelect,
-}: {
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <Card selected={selected} onSelect={onSelect}>
-      <span className="flex h-9 w-9 items-center justify-center rounded-md bg-green-50 text-green-600">
-        <Building2 className="h-4 w-4" />
-      </span>
-      <p className="mt-4 text-body font-semibold text-text-primary">
-        Add your first client
-      </p>
-      <p className="mt-1.5 text-meta text-text-secondary">
-        Enter your client&apos;s business name and domain to create your
-        first case.
-      </p>
-    </Card>
-  );
-}
-
-function Card({
-  selected,
-  onSelect,
-  children,
-}: {
-  selected: boolean;
-  onSelect: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={selected}
-      className={[
-        "rounded-[10px] border bg-bg-card px-6 py-6 text-left shadow-card transition-all",
-        selected
-          ? "border-green-400 ring-[3px] ring-green-50"
-          : "border-border-subtle hover:border-border-default",
-      ].join(" ")}
-    >
-      {children}
-    </button>
-  );
-}
-
-const inputClass =
-  "w-full rounded-md border border-border-default bg-bg-input px-3 py-2 text-meta text-text-primary placeholder:text-text-tertiary transition-shadow focus:border-green-400 focus:outline-none focus:ring-[3px] focus:ring-green-50";
 
 function Field({
   id,
   label,
-  children,
+  type = "text",
+  required,
+  placeholder,
+  autoComplete,
 }: {
   id: string;
   label: string;
-  children: React.ReactNode;
+  type?: string;
+  required?: boolean;
+  placeholder?: string;
+  autoComplete?: string;
 }) {
   return (
-    <div className="space-y-2">
+    <div>
       <label
         htmlFor={id}
-        className="text-meta font-medium text-text-primary"
+        className="block text-[13px] font-medium text-text-primary"
       >
         {label}
+        {required ? null : (
+          <span className="ml-1 text-text-tertiary">(optional)</span>
+        )}
       </label>
-      {children}
+      <input
+        id={id}
+        name={id}
+        type={type}
+        required={required}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        className="mt-1.5 block w-full rounded-[8px] border border-border-default bg-bg-input px-3 py-2.5 text-[14px] text-text-primary placeholder:text-text-tertiary transition-shadow focus:border-green-400 focus:ring-[3px] focus:ring-green-50 focus:outline-none"
+      />
     </div>
   );
 }

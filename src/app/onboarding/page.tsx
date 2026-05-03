@@ -142,10 +142,11 @@ function Step2({ error }: { error?: string }) {
     <>
       <div>
         <h1 className="text-display font-light leading-[1.1] text-text-primary">
-          How would you like to start?
+          Add your first client
         </h1>
         <p className="mt-3 text-body text-text-secondary">
-          You can always add more clients later.
+          Enter a business owner client you work with. We&apos;ll generate
+          their valuation and risk profile automatically.
         </p>
       </div>
 

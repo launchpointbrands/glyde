@@ -6,8 +6,7 @@ import { generateBusinessDescription } from "@/lib/business-description";
 import { ensureFinancials } from "@/lib/financials";
 import { createClient } from "@/lib/supabase/server";
 
-const PETER_SMITH_DESCRIPTION =
-  "Precision Auto Services is a partnership-structured automotive parts manufacturer serving commercial and industrial clients. The business generates approximately $5.8M in annual revenue with strong recurring customer relationships. Peter Smith serves as the primary owner and operator.";
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function requireAdvisor() {
   const supabase = await createClient();
@@ -54,7 +53,15 @@ function normalizeDomain(input: string): string {
     .replace(/\/+$/, "");
 }
 
-async function markCompleted(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+function deriveBusinessName(domain: string): string {
+  const root = domain.split(".")[0] ?? domain;
+  return root.charAt(0).toUpperCase() + root.slice(1);
+}
+
+async function markCompleted(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+) {
   const { error } = await supabase
     .from("advisors")
     .update({ onboarding_completed: true })
@@ -62,63 +69,20 @@ async function markCompleted(supabase: Awaited<ReturnType<typeof createClient>>,
   if (error) throw new Error(error.message);
 }
 
-// Onboarding step 2A — load the canonical Peter Smith demo case.
-// Reuses the existing seed RPC, marks onboarding complete, redirects
-// to the demo case's Risk dashboard for instant gratification.
-export async function completeOnboardingWithDemo() {
+// Onboarding step 2 (skip path) — the demo case is auto-seeded by the
+// signup trigger, so skipping is safe: advisor lands on /app with
+// Peter Smith already in their book.
+export async function skipOnboarding() {
   const { supabase, userId } = await requireAdvisor();
-
-  const { data: newCaseId, error: rpcError } = await supabase.rpc(
-    "seed_demo_case_for_current_advisor",
-  );
-
-  if (rpcError) {
-    redirect(
-      `/onboarding?step=2&error=${encodeURIComponent(rpcError.message)}`,
-    );
-  }
-
   await markCompleted(supabase, userId);
-
-  let caseId = newCaseId as string | null;
-  if (!caseId) {
-    // RPC returns null when a demo case already exists for this advisor.
-    const { data: existing } = await supabase
-      .from("cases")
-      .select("id")
-      .eq("label", "demo")
-      .eq("advisor_id", userId)
-      .single();
-    caseId = existing?.id ?? null;
-  }
-
-  // Backfill the hardcoded Peter Smith description on the seeded row if
-  // it isn't already set. Idempotent — only updates rows where the
-  // column is null, so re-runs are safe.
-  if (caseId) {
-    const { data: caseRow } = await supabase
-      .from("cases")
-      .select("client_business_id")
-      .eq("id", caseId)
-      .single();
-    if (caseRow?.client_business_id) {
-      await supabase
-        .from("client_businesses")
-        .update({ business_description: PETER_SMITH_DESCRIPTION })
-        .eq("id", caseRow.client_business_id)
-        .is("business_description", null);
-    }
-  }
-
   revalidatePath("/", "layout");
-  if (!caseId) redirect("/app");
-  redirect(`/app/cases/${caseId}/risk`);
+  redirect("/app");
 }
 
-// Onboarding step 2B — manual client. Creates a client_business + case
-// + simulated valuation, marks onboarding complete, redirects to the
-// new case's Discovery surface (which auto-fires the walkthrough on
-// zero discovery_responses).
+// Onboarding step 2 — manual client. Creates a client_business + case,
+// kicks off AI business description and financials, marks onboarding
+// complete, redirects to the processing animation which lands on the
+// new case's Overview tab.
 export async function completeOnboardingWithClient(formData: FormData) {
   const { supabase, userId } = await requireAdvisor();
 
@@ -141,12 +105,21 @@ export async function completeOnboardingWithClient(formData: FormData) {
     );
   }
 
-  const businessName = String(formData.get("business_name") ?? "").trim();
-  if (!businessName) {
+  const contactName =
+    String(formData.get("contact_name") ?? "").trim() || null;
+
+  const contactEmailRaw = String(formData.get("contact_email") ?? "").trim();
+  if (contactEmailRaw && !EMAIL_RE.test(contactEmailRaw)) {
     redirect(
-      `/onboarding?step=2&error=${encodeURIComponent("Business name is required.")}`,
+      `/onboarding?step=2&error=${encodeURIComponent("Enter a valid email address.")}`,
     );
   }
+  const contactEmail = contactEmailRaw || null;
+
+  const businessNameRaw = String(formData.get("business_name") ?? "").trim();
+  const businessName =
+    businessNameRaw ||
+    (contactName ? `${contactName} Business` : deriveBusinessName(domain));
 
   const { data: cb, error: cbErr } = await supabase
     .from("client_businesses")
@@ -155,6 +128,8 @@ export async function completeOnboardingWithClient(formData: FormData) {
       firm_id: advisor.firm_id,
       business_name: businessName,
       domain,
+      contact_name: contactName,
+      contact_email: contactEmail,
       created_via: "advisor_manual",
     })
     .select("id")
@@ -184,7 +159,7 @@ export async function completeOnboardingWithClient(formData: FormData) {
   }
 
   // Best-effort: kick off the AI business description. A failure here
-  // (no API key, network) shouldn't block the redirect into discovery.
+  // (no API key, network) shouldn't block the redirect.
   try {
     await generateBusinessDescription({
       clientBusinessId: cb.id,
@@ -207,5 +182,5 @@ export async function completeOnboardingWithClient(formData: FormData) {
 
   await markCompleted(supabase, userId);
   revalidatePath("/", "layout");
-  redirect(`/app/cases/${caseRow.id}/discovery`);
+  redirect(`/app/processing?caseId=${caseRow.id}`);
 }
