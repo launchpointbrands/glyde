@@ -1,6 +1,7 @@
 import { Users } from "lucide-react";
 import Image from "next/image";
 import { signOut } from "@/lib/auth";
+import { InviteButton } from "@/components/invite-button";
 import { SidebarLink } from "@/components/sidebar-link";
 import { createClient } from "@/lib/supabase/server";
 
@@ -64,6 +65,10 @@ export async function Sidebar() {
       </nav>
 
       <div className="flex-1" />
+
+      <div className="border-t border-border-subtle px-3 py-3">
+        <InviteButton />
+      </div>
 
       <div className="border-t border-border-subtle px-3 py-3">
         <div className="flex items-center gap-3">

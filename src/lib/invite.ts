@@ -1,0 +1,177 @@
+"use server";
+
+import { Resend } from "resend";
+import { createClient } from "@/lib/supabase/server";
+
+export type InviteResult = { success: true } | { error: string };
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export async function sendInvitation(email: string): Promise<InviteResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Sign in to send invitations." };
+
+  const trimmed = email.trim();
+  if (!EMAIL_RE.test(trimmed)) {
+    return { error: "Enter a valid email address." };
+  }
+
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return { error: "Email service not configured." };
+
+  try {
+    const resend = new Resend(apiKey);
+    const { error } = await resend.emails.send({
+      from: "Glyde <info@meetings.launchpointbrands.com>",
+      to: trimmed,
+      subject: "You're invited to Glyde",
+      html: INVITE_HTML,
+    });
+    if (error) return { error: error.message ?? "Could not send invitation." };
+    return { success: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Could not send invitation.";
+    return { error: msg };
+  }
+}
+
+const INVITE_HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>You're invited to Glyde</title>
+</head>
+<body style="margin:0;padding:0;background-color:#F4F6F4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F4F6F4;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+
+          <!-- Logo header — dark green panel -->
+          <tr>
+            <td style="background-color:#0D2A0D;border-radius:12px 12px 0 0;padding:24px 40px;">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 772.3 146.1" height="28" style="display:block;">
+                <path fill="#ffffff" d="M772.3,82.1v35.6h-16.5v-32.5c0-8.4-1.3-15.8-11.1-15.8s-13.7,8.3-13.7,18.5v29.8h-16.5V32.1h16.5v25.3c0,3.6-.1,7.8-.3,9.7,4.1-6.8,11-10.7,19.7-10.7,17,0,21.8,11.3,21.8,25.7Z"/>
+                <path fill="#ffffff" d="M702.9,104.8l.9,12.3c-3.6,1.2-7.9,2-12.2,2-15.1,0-18.8-7.8-18.8-21.2v-27.8h-8.9v-12.3h8.9v-17.1h16.5v17.1h14.4v12.3h-14.4v25.2c0,7.7,1.3,10.9,7.5,10.9s4.6-.6,6.2-1.4Z"/>
+                <path fill="#ffffff" d="M655.2,83.3v34.4h-15.9v-6.9c-2.6,4.3-9.9,8.3-19.3,8.3s-21.7-6.6-21.7-18.4,12.5-17.9,25.4-18.7l15-1v-1.6c0-6.9-4.9-11-14-11s-12.1,2.2-17.5,5.3l-5.2-10.9c8.4-4.6,16.6-6.3,25.1-6.3,18.6,0,28.1,8.3,28.1,26.9ZM638.8,101.7v-11.2l-11,.8c-8.8.6-12.8,3.4-12.8,8.4s4.3,8.6,10.2,8.6,11.4-3.6,13.5-6.6Z"/>
+                <path fill="#ffffff" d="M561.9,32.1c18.7,0,31.6,9.7,31.6,26.2s-13.8,27.2-31.6,27.2h-11.9v32.2h-16.8V32.1h28.6ZM576.2,58.3c0-8.6-6.8-12.5-16.8-12.5h-9.4v26h9.8c9.3,0,16.4-4.5,16.4-13.5Z"/>
+                <path fill="#ffffff" d="M520.6,85.1c0,2.5-.3,7.1-.4,8.3h-45.1c1.8,9.2,9,13.4,17.8,13.4s14.8-3.2,18.3-6.7l6.7,8.8c-3.5,3.7-14.1,10.2-27.6,10.2s-32.9-11-32.9-30.6,14.3-32,33.1-32,30,12.1,30,28.6ZM474.7,82.2h29.5c-.1-6.2-4.1-13.9-14.6-13.9s-13.7,6.9-15,13.9Z"/>
+                <path fill="#ffffff" d="M445.4,32.1v85.6h-15.9v-9.5c-6.1,8.2-13.7,10.9-21.7,10.9-18.2,0-29.4-13.8-29.4-31.4s11.6-31.2,30.6-31.2,15.2,3,20.1,9.4c-.1-1.7-.3-5.1-.3-8.3v-25.4h16.5ZM412.7,106.2c9.9,0,16.8-7.2,16.8-18.2s-6.7-18.6-17.3-18.6-16.6,8.7-16.6,18.6,6.4,18.2,17.2,18.2Z"/>
+                <path fill="#ffffff" d="M376.1,57.8l-29,67.9c-4.5,10.5-11.3,15.6-20.6,15.6s-9.5-1.4-11.9-2.5l3.4-12.3c2.6,1,4.9,1.9,7.6,1.9s5.1-1.1,6.4-4.1l2.7-6.2-25.9-60.4h17.7l16.1,42.6,15.9-42.6h17.7Z"/>
+                <rect fill="#ffffff" x="284" y="32.1" width="16.5" height="85.6"/>
+                <path fill="#ffffff" d="M269.3,70.4v34.5c-9.5,9.4-23.1,14.3-37.7,14.3-26.1,0-46.9-15.5-46.9-43.9s20.9-44.6,46.3-44.6,28.8,6.8,36,14.9l-10.8,9.8c-5.9-6.4-14.6-10.5-25-10.5-16.9,0-29.1,10.8-29.1,30s12.2,30.3,30.3,30.3,15.7-2,20.8-6.5v-15h-21.4v-13.1h37.7Z"/>
+                <path fill="#ffffff" d="M146.1,31.9v83c0,17.4-14.1,31.6-31.6,31.6H31.6C14.1,146.5,0,132.4,0,114.9V31.9C0,14.5,14.1.3,31.6.3h83c17.4,0,31.6,14.1,31.6,31.6ZM108.2,62.6V26.2c0,0-35.6,0-35.6,0-9.7,0-18.9,4.3-25.4,11.3-12.5,13.4-12.5,34.2-.2,47.6,11.5,12.6,30.4,15.3,45,5.9,9.7-6.2,16.2-16.9,16.2-28.5ZM104.9,110.8l-8.8-12.8c-13.7,9.4-31.9,9.6-45.8.2l-8.7,12.9c19.1,13,44.4,12.8,63.4-.2Z"/>
+                <path fill="#ffffff" d="M92.7,41.7v20.1c0,8.6-6.1,15.9-13.9,18.3-8.6,2.6-17.6-.9-22.2-8.1-4.9-7.5-4.1-17.3,1.8-23.9,3.4-3.8,8.2-6.3,13.4-6.5h20.9Z"/>
+              </svg>
+            </td>
+          </tr>
+
+          <!-- Main card -->
+          <tr>
+            <td style="background-color:#ffffff;border-radius:0 0 12px 12px;border:1px solid #E8EDE8;border-top:none;padding:40px 40px 40px;">
+
+              <!-- Eyebrow -->
+              <p style="margin:0 0 8px 0;font-size:11px;font-weight:600;color:#7A9A7A;letter-spacing:0.08em;text-transform:uppercase;">Private invitation</p>
+
+              <!-- Headline -->
+              <h1 style="margin:0 0 16px 0;font-size:26px;font-weight:400;color:#1A2E1A;line-height:1.25;">You're invited to review Glyde.</h1>
+
+              <!-- Subhead -->
+              <p style="margin:0 0 28px 0;font-size:15px;color:#4A6A4A;line-height:1.65;">We've been building something I think you'll find compelling — a platform designed specifically for wealth advisors working with business owner clients.</p>
+
+              <!-- Divider -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+                <tr><td style="height:1px;background-color:#E8EDE8;"></td></tr>
+              </table>
+
+              <!-- What it does -->
+              <p style="margin:0 0 20px 0;font-size:11px;font-weight:600;color:#7A9A7A;letter-spacing:0.08em;text-transform:uppercase;">What Glyde does</p>
+
+              <!-- Feature 1 -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;">
+                <tr>
+                  <td width="28" valign="top" style="padding-top:1px;">
+                    <div style="width:22px;height:22px;background-color:#F0F7F0;border-radius:5px;text-align:center;line-height:22px;font-size:13px;">📊</div>
+                  </td>
+                  <td style="padding-left:14px;">
+                    <p style="margin:0 0 3px;font-size:14px;font-weight:600;color:#1A2E1A;">Valuation, risk & succession reports</p>
+                    <p style="margin:0;font-size:13px;color:#4A6A4A;line-height:1.55;">Instant valuation ranges, 8-factor risk assessments, and succession readiness scores — generated from a simple discovery conversation with your client.</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Feature 2 -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;">
+                <tr>
+                  <td width="28" valign="top" style="padding-top:1px;">
+                    <div style="width:22px;height:22px;background-color:#F0F7F0;border-radius:5px;text-align:center;line-height:22px;font-size:13px;">🗂️</div>
+                  </td>
+                  <td style="padding-left:14px;">
+                    <p style="margin:0 0 3px;font-size:14px;font-weight:600;color:#1A2E1A;">Prioritized advisor path</p>
+                    <p style="margin:0;font-size:13px;color:#4A6A4A;line-height:1.55;">For each client, Glyde surfaces the highest-impact conversations to have — in priority order, based on their specific risk profile and exit timeline.</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Feature 3 -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
+                <tr>
+                  <td width="28" valign="top" style="padding-top:1px;">
+                    <div style="width:22px;height:22px;background-color:#F0F7F0;border-radius:5px;text-align:center;line-height:22px;font-size:13px;">✨</div>
+                  </td>
+                  <td style="padding-left:14px;">
+                    <p style="margin:0 0 3px;font-size:14px;font-weight:600;color:#1A2E1A;">Ask Glyde — AI advisor coaching</p>
+                    <p style="margin:0;font-size:13px;color:#4A6A4A;line-height:1.55;">Before any client meeting, ask Glyde how to approach a specific conversation. It gives you a tailored opening line, context on why it matters for this client, and how to handle objections.</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Divider -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+                <tr><td style="height:1px;background-color:#E8EDE8;"></td></tr>
+              </table>
+
+              <!-- Instructions -->
+              <p style="margin:0 0 8px 0;font-size:11px;font-weight:600;color:#7A9A7A;letter-spacing:0.08em;text-transform:uppercase;">Getting started</p>
+              <p style="margin:0 0 28px 0;font-size:14px;color:#4A6A4A;line-height:1.65;">Create your account, then add a business owner client you work with — or explore with a built-in sample case. Setup takes under 3 minutes. The platform will guide you through the rest.</p>
+
+              <!-- CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+                <tr>
+                  <td align="center">
+                    <a href="https://glyde-alpha.vercel.app/signup" style="display:inline-block;background-color:#5CA85C;color:#ffffff;font-size:15px;font-weight:500;text-decoration:none;padding:14px 40px;border-radius:8px;">Create your account →</a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- URL fallback -->
+              <p style="margin:0 0 32px;font-size:12px;color:#7A9A7A;text-align:center;">glyde-alpha.vercel.app/signup</p>
+
+              <!-- Divider -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                <tr><td style="height:1px;background-color:#E8EDE8;"></td></tr>
+              </table>
+
+              <!-- Personal note -->
+              <p style="margin:0;font-size:13px;color:#7A9A7A;line-height:1.65;">This is an early preview — your reaction means a lot. Happy to walk through it together once you've had a chance to explore on your own.</p>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding-top:20px;padding-bottom:8px;">
+              <p style="margin:0;font-size:11px;color:#7A9A7A;letter-spacing:0.03em;">GlydePath &nbsp;·&nbsp; Built for advisors &nbsp;·&nbsp; Distributed through firms</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
