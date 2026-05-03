@@ -9,6 +9,7 @@ import {
 import { SeverityHero } from "@/components/dashboard/severity-hero";
 import { StatCard, StatCardHeading } from "@/components/dashboard/stat-card";
 import type { Severity } from "@/components/dashboard/severity-pill";
+import { ensureFinancials } from "@/lib/financials";
 import { createClient } from "@/lib/supabase/server";
 
 const formatUSDFull = (n: number | null | undefined) =>
@@ -35,6 +36,15 @@ export default async function RiskPage({
   params: Promise<{ id: string }>;
 }) {
   const { id: caseId } = await params;
+
+  // Lazy-init for cases created before AI estimation was wired in.
+  // Idempotent — no-op once the four module tables are populated.
+  try {
+    await ensureFinancials({ caseId });
+  } catch (e) {
+    console.error("ensureFinancials (risk) failed", e);
+  }
+
   const supabase = await createClient();
 
   const { data: assessment } = await supabase

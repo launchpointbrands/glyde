@@ -35,16 +35,50 @@ const NAICS_OPTIONS = [
   "561110", // Office Administrative Services
 ];
 
+// Sanity ranges — applied as hard clamps regardless of hash output, so
+// the simulator can never produce e.g. a $40M valuation for a tiny
+// shop. The AI estimator (src/lib/financials.ts) re-applies the same
+// clamps so even a hallucinated response stays in the plausible band.
+export const SIM_MIN_REVENUE = 500_000;
+export const SIM_MAX_REVENUE = 50_000_000;
+export const SIM_MIN_EBITDA_MARGIN = 0.08;
+export const SIM_MAX_EBITDA_MARGIN = 0.25;
+export const SIM_MIN_EBITDA_MULTIPLE = 3;
+export const SIM_MAX_EBITDA_MULTIPLE = 12;
+export const SIM_MIN_REVENUE_MULTIPLE = 0.3;
+export const SIM_MAX_REVENUE_MULTIPLE = 3;
+export const SIM_MAX_NWC_PCT = 0.3; // working capital ≤ 30% of revenue
+export const SIM_MAX_DEBT_TO_EBITDA = 3; // total debt ≤ 3 × EBITDA
+
+const clamp = (n: number, lo: number, hi: number) =>
+  Math.min(Math.max(n, lo), hi);
+
 export function simulateValuation(domain: string) {
   const rand = mulberry32(fnv1a(domain));
   const r = (lo: number, hi: number) => lo + rand() * (hi - lo);
   const ri = (lo: number, hi: number) => Math.round(r(lo, hi));
 
-  const revenue_ttm = ri(1_500_000, 25_000_000);
-  const ebitda_margin = r(0.08, 0.2);
+  const revenue_ttm = clamp(
+    ri(1_500_000, 25_000_000),
+    SIM_MIN_REVENUE,
+    SIM_MAX_REVENUE,
+  );
+  const ebitda_margin = clamp(
+    r(0.08, 0.2),
+    SIM_MIN_EBITDA_MARGIN,
+    SIM_MAX_EBITDA_MARGIN,
+  );
   const normalized_ebitda = Math.round(revenue_ttm * ebitda_margin);
-  const ebitda_multiple = +r(5.0, 11.0).toFixed(2);
-  const revenue_multiple = +r(0.8, 2.4).toFixed(2);
+  const ebitda_multiple = +clamp(
+    r(5.0, 11.0),
+    SIM_MIN_EBITDA_MULTIPLE,
+    SIM_MAX_EBITDA_MULTIPLE,
+  ).toFixed(2);
+  const revenue_multiple = +clamp(
+    r(0.8, 2.4),
+    SIM_MIN_REVENUE_MULTIPLE,
+    SIM_MAX_REVENUE_MULTIPLE,
+  ).toFixed(2);
 
   const v_ebitda = normalized_ebitda * ebitda_multiple;
   const v_revenue = revenue_ttm * revenue_multiple;
@@ -53,8 +87,18 @@ export function simulateValuation(domain: string) {
   const valuation_low = Math.round(valuation_estimate * 0.9);
   const valuation_high = Math.round(valuation_estimate * 1.1);
 
-  const net_working_capital = Math.round(revenue_ttm * r(0.05, 0.18));
-  const interest_bearing_debt = Math.round(revenue_ttm * r(0.05, 0.2));
+  // Working capital: positive, ≤ 30% of revenue.
+  const net_working_capital = clamp(
+    Math.round(revenue_ttm * r(0.05, 0.18)),
+    1,
+    Math.round(revenue_ttm * SIM_MAX_NWC_PCT),
+  );
+  // Total debt: ≤ 3 × EBITDA.
+  const interest_bearing_debt = clamp(
+    Math.round(revenue_ttm * r(0.05, 0.2)),
+    0,
+    Math.round(normalized_ebitda * SIM_MAX_DEBT_TO_EBITDA),
+  );
   const balance_sheet_impact = net_working_capital - interest_bearing_debt;
 
   const risk_pick = rand();

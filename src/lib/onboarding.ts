@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { generateBusinessDescription } from "@/lib/business-description";
+import { ensureFinancials } from "@/lib/financials";
 import { createClient } from "@/lib/supabase/server";
 import { simulateValuation } from "@/lib/simulate";
 
@@ -200,6 +201,16 @@ export async function completeOnboardingWithClient(formData: FormData) {
     });
   } catch (e) {
     console.error("generateBusinessDescription (onboarding) failed", e);
+  }
+
+  // AI-powered financials so the case lands on dashboards with
+  // realistic numbers (revenue, EBITDA, multiples, working capital,
+  // debt). Idempotent + falls back to the clamped simulator on
+  // failure inside ensureFinancials.
+  try {
+    await ensureFinancials({ caseId: caseRow.id });
+  } catch (e) {
+    console.error("ensureFinancials (onboarding) failed", e);
   }
 
   await markCompleted(supabase, userId);

@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { SeverityHero } from "@/components/dashboard/severity-hero";
 import type { Severity } from "@/components/dashboard/severity-pill";
 import { StatCard, StatCardHeading } from "@/components/dashboard/stat-card";
+import { ensureFinancials } from "@/lib/financials";
 import { createClient } from "@/lib/supabase/server";
 
 const formatUSD = (n: number | null | undefined) => {
@@ -23,6 +24,13 @@ export default async function WealthPage({
   params: Promise<{ id: string }>;
 }) {
   const { id: caseId } = await params;
+
+  try {
+    await ensureFinancials({ caseId });
+  } catch (e) {
+    console.error("ensureFinancials (wealth) failed", e);
+  }
+
   const supabase = await createClient();
 
   const [{ data: plan }, { data: valuation }] = await Promise.all([

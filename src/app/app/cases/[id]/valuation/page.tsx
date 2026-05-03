@@ -4,6 +4,7 @@ import { FooterActions } from "@/components/dashboard/footer-actions";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { ValuationScaleBar } from "@/components/dashboard/valuation-scale-bar";
 import { EditableValue } from "@/components/valuation/editable-value";
+import { ensureFinancials } from "@/lib/financials";
 import { createClient } from "@/lib/supabase/server";
 
 const formatUSD = (n: number | null | undefined) => {
@@ -54,6 +55,13 @@ export default async function ValuationPage({
   params: Promise<{ id: string }>;
 }) {
   const { id: caseId } = await params;
+
+  try {
+    await ensureFinancials({ caseId });
+  } catch (e) {
+    console.error("ensureFinancials (valuation) failed", e);
+  }
+
   const supabase = await createClient();
 
   const [{ data: snap }, { data: caseRow }, { data: responses }] =

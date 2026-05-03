@@ -14,6 +14,7 @@ import {
   type ReadinessItem,
 } from "@/components/dashboard/readiness-checklist";
 import { StatCard, StatCardHeading } from "@/components/dashboard/stat-card";
+import { ensureFinancials } from "@/lib/financials";
 import { createClient } from "@/lib/supabase/server";
 
 const formatUSD = (n: number | null | undefined) => {
@@ -64,6 +65,13 @@ export default async function SuccessionPage({
   params: Promise<{ id: string }>;
 }) {
   const { id: caseId } = await params;
+
+  try {
+    await ensureFinancials({ caseId });
+  } catch (e) {
+    console.error("ensureFinancials (succession) failed", e);
+  }
+
   const supabase = await createClient();
 
   const [

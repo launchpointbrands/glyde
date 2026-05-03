@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { generateBusinessDescription } from "@/lib/business-description";
+import { ensureFinancials } from "@/lib/financials";
 import { createClient } from "@/lib/supabase/server";
 import { simulateValuation } from "@/lib/simulate";
 
@@ -102,6 +103,15 @@ export async function createCase(formData: FormData) {
     });
   } catch (e) {
     console.error("generateBusinessDescription (createCase) failed", e);
+  }
+
+  // Generate AI-powered realistic financial estimates and populate the
+  // four module tables. Idempotent + try/catch'd inside ensureFinancials;
+  // simulator fallback ensures dashboards always render.
+  try {
+    await ensureFinancials({ caseId: caseRow.id });
+  } catch (e) {
+    console.error("ensureFinancials (createCase) failed", e);
   }
 
   revalidatePath("/app");
