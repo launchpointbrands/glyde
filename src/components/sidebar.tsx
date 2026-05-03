@@ -66,7 +66,7 @@ export async function Sidebar() {
 
       <div className="flex-1" />
 
-      <div className="border-t border-border-subtle px-3 py-3">
+      <div className="border-t border-border-subtle px-2 py-3">
         <InviteButton />
       </div>
 

@@ -60,7 +60,9 @@ export function InviteButton() {
         onClick={() => setOpen(true)}
         className="flex w-full items-center gap-3 rounded-[8px] border border-transparent px-3 py-2 text-left text-text-secondary transition-colors duration-100 hover:bg-bg-hover hover:text-text-primary group-hover/sidebar:border-green-200 group-hover/sidebar:bg-green-50 group-hover/sidebar:text-green-800 group-hover/sidebar:hover:bg-green-100"
       >
-        <Mail className="h-[18px] w-[18px] shrink-0 text-green-600" strokeWidth={2} />
+        <span className="flex h-4 w-4 shrink-0 items-center justify-center text-green-600">
+          <Mail className="h-4 w-4" strokeWidth={2} />
+        </span>
         <span className="truncate text-[13px] font-medium opacity-0 transition-opacity duration-150 group-hover/sidebar:opacity-100">
           Invite a colleague
         </span>
