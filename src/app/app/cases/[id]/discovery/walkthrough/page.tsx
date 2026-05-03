@@ -103,7 +103,7 @@ export default async function WalkthroughPage({
       ? `/app/cases/${caseId}/discovery`
       : `/app/cases/${caseId}/discovery/walkthrough?q=${step.number - 1}`;
   const nextHref = isLast
-    ? `/app/cases/${caseId}/discovery?from=walkthrough_complete`
+    ? `/app/processing?caseId=${caseId}`
     : `/app/cases/${caseId}/discovery/walkthrough?q=${step.number + 1}`;
 
   // Next-eligible once the field has a row, regardless of status.

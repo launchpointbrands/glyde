@@ -17,7 +17,7 @@ const VARIANT_FAMILY: Record<StatusVariant, Family> = {
   verified: "success",
   simulated: "neutral",
   skipped: "warning",
-  follow_up: "danger",
+  follow_up: "warning",
   high: "danger",
   moderate: "warning",
   low: "success",
@@ -62,7 +62,7 @@ export function StatusPill({
   return (
     <span
       className={[
-        "inline-flex items-center gap-1.5 rounded-full border px-3 py-[3px] text-eyebrow font-medium uppercase",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-[3px] text-eyebrow font-medium uppercase",
         FAMILY_CLASSES[family],
       ].join(" ")}
     >

@@ -2,10 +2,12 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { PathItemRow } from "@/components/dashboard/path-item";
 import { SeverityHero } from "@/components/dashboard/severity-hero";
+import { OverviewConfetti } from "@/components/dashboard/overview-confetti";
 import { StatCard, StatCardHeading } from "@/components/dashboard/stat-card";
 import { ValuationScaleBar } from "@/components/dashboard/valuation-scale-bar";
 import { getCaseStats } from "@/lib/case-stats";
 import { buildPathItems } from "@/lib/path";
+import { createClient } from "@/lib/supabase/server";
 
 const formatUSD = (n: number | null | undefined) => {
   if (n == null) return "—";
@@ -40,11 +42,33 @@ export default async function CaseOverviewPage({
   params: Promise<{ id: string }>;
 }) {
   const { id: caseId } = await params;
+  const supabase = await createClient();
 
-  const [stats, pathItems] = await Promise.all([
+  const [stats, pathItems, { data: caseRow }] = await Promise.all([
     getCaseStats(caseId),
     buildPathItems(caseId),
+    supabase
+      .from("cases")
+      .select("first_viewed_at")
+      .eq("id", caseId)
+      .maybeSingle(),
   ]);
+
+  // Fire celebratory confetti exactly once — first time the advisor
+  // lands on Overview after completing discovery. Stamp the row before
+  // we render so a refresh doesn't re-fire.
+  let showConfetti = false;
+  if (caseRow && !caseRow.first_viewed_at) {
+    showConfetti = true;
+    try {
+      await supabase
+        .from("cases")
+        .update({ first_viewed_at: new Date().toISOString() })
+        .eq("id", caseId);
+    } catch (e) {
+      console.error("first_viewed_at stamp failed", e);
+    }
+  }
 
   const {
     valuation,
@@ -71,6 +95,7 @@ export default async function CaseOverviewPage({
 
   return (
     <main className="flex flex-1 flex-col px-5 pt-6 pb-12 md:px-10 md:pt-8 md:pb-16">
+      {showConfetti && <OverviewConfetti />}
       <div className="mx-auto w-full max-w-[1120px] space-y-6">
         {/* Full-width valuation hero banner */}
         <OverviewBanner

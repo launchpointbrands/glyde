@@ -134,7 +134,6 @@ export function WalkthroughQuestion({
               return;
             commit(trimmed);
           }}
-          disabled={pending}
           className={inputClass}
         />
       )}
@@ -155,7 +154,6 @@ export function WalkthroughQuestion({
               if (currentValue === n) return;
               commit(n);
             }}
-            disabled={pending}
             min={field.input_type === "percentage" ? 0 : undefined}
             max={field.input_type === "percentage" ? 100 : undefined}
             className={`${inputClass} font-mono pr-10`}
