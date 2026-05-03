@@ -2,6 +2,7 @@
 
 import { ChevronRight, TriangleAlert } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { Severity } from "./severity-pill";
 
@@ -146,9 +147,11 @@ const RISK_TONE: Record<
 export function RiskClient({
   initialFactors,
   caseId,
+  discoveryComplete,
 }: {
   initialFactors: RiskFactor[];
   caseId: string;
+  discoveryComplete: boolean;
 }) {
   const [openKey, setOpenKey] = useState<string | null>(null);
 
@@ -197,7 +200,10 @@ export function RiskClient({
       </section>
 
       {isEmpty ? (
-        <EmptyFactorsPanel caseId={caseId} />
+        <EmptyFactorsPanel
+          caseId={caseId}
+          discoveryComplete={discoveryComplete}
+        />
       ) : (
         <TabbedFactorTable
           factors={initialFactors}
@@ -209,20 +215,46 @@ export function RiskClient({
   );
 }
 
-function EmptyFactorsPanel({ caseId }: { caseId: string }) {
+function EmptyFactorsPanel({
+  caseId,
+  discoveryComplete,
+}: {
+  caseId: string;
+  discoveryComplete: boolean;
+}) {
+  const router = useRouter();
+
   return (
     <div className="mb-8 rounded-[10px] border border-border-subtle bg-bg-card p-7 text-center shadow-card">
-      <p className="mx-auto max-w-md text-meta text-text-secondary">
-        Complete discovery to generate a detailed risk factor analysis for this
-        client. Each of the 8 risk factors will be scored based on their
-        specific situation.
-      </p>
-      <Link
-        href={`/app/cases/${caseId}/discovery/walkthrough?q=1`}
-        className="mt-4 inline-block text-meta font-medium text-green-600 transition-colors hover:text-green-800"
-      >
-        Continue discovery →
-      </Link>
+      {discoveryComplete ? (
+        <>
+          <p className="mx-auto max-w-md text-meta text-text-secondary">
+            Risk factor analysis is being generated based on this client&apos;s
+            discovery responses. Check back shortly or refresh the page.
+          </p>
+          <button
+            type="button"
+            onClick={() => router.refresh()}
+            className="mt-4 inline-block text-meta font-medium text-green-600 transition-colors hover:text-green-800"
+          >
+            Refresh page →
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="mx-auto max-w-md text-meta text-text-secondary">
+            Complete discovery to generate a detailed risk factor analysis for
+            this client. Each of the 8 risk factors will be scored based on
+            their specific situation.
+          </p>
+          <Link
+            href={`/app/cases/${caseId}/discovery/walkthrough?q=1`}
+            className="mt-4 inline-block text-meta font-medium text-green-600 transition-colors hover:text-green-800"
+          >
+            Continue discovery →
+          </Link>
+        </>
+      )}
     </div>
   );
 }

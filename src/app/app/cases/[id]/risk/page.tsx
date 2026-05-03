@@ -9,6 +9,7 @@ import {
 import { SeverityHero } from "@/components/dashboard/severity-hero";
 import { StatCard, StatCardHeading } from "@/components/dashboard/stat-card";
 import type { Severity } from "@/components/dashboard/severity-pill";
+import { STEPS, TOTAL_STEPS } from "@/lib/discovery-walkthrough";
 import { ensureFinancials } from "@/lib/financials";
 import { createClient } from "@/lib/supabase/server";
 
@@ -47,24 +48,29 @@ export default async function RiskPage({
 
   const supabase = await createClient();
 
-  const [{ data: assessment }, { data: valuation }] = await Promise.all([
-    supabase
-      .from("risk_assessments")
-      .select(
-        "overall_risk, factors, buy_sell_status, risk_to_equity, valuation_snapshot_id",
-      )
-      .eq("case_id", caseId)
-      .order("computed_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from("valuation_snapshots")
-      .select("equity_value_owned")
-      .eq("case_id", caseId)
-      .order("computed_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-  ]);
+  const [{ data: assessment }, { data: valuation }, { data: responses }] =
+    await Promise.all([
+      supabase
+        .from("risk_assessments")
+        .select(
+          "overall_risk, factors, buy_sell_status, risk_to_equity, valuation_snapshot_id",
+        )
+        .eq("case_id", caseId)
+        .order("computed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("valuation_snapshots")
+        .select("equity_value_owned")
+        .eq("case_id", caseId)
+        .order("computed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("discovery_responses")
+        .select("field_key, source, status")
+        .eq("case_id", caseId),
+    ]);
 
   if (!assessment) {
     return <GeneratingReport title="Business Risk Assessment" />;
@@ -80,6 +86,21 @@ export default async function RiskPage({
   // referenced here so it can't drift if the valuation gets updated.
   const equityValueOwned = valuation?.equity_value_owned ?? null;
 
+  // Mirror the case layout's verified-count / completion definition so
+  // the empty-factors panel below can show the right copy + CTA when
+  // discovery is fully done vs. still pending.
+  const responseByKey = new Map(
+    (responses ?? []).map((r) => [
+      r.field_key as string,
+      { source: r.source as string, status: r.status as string },
+    ]),
+  );
+  const verifiedCount = STEPS.filter((s) => {
+    const r = responseByKey.get(s.fieldKey);
+    return r?.status === "answered" && r.source !== "simulated";
+  }).length;
+  const discoveryComplete = verifiedCount === TOTAL_STEPS;
+
   return (
     <main className="flex flex-1 flex-col px-5 pt-8 pb-12 md:px-10 md:pt-10 md:pb-16">
       <div className="mx-auto w-full max-w-[1100px]">
@@ -88,7 +109,11 @@ export default async function RiskPage({
           subtitle="A review of the risk factors that impact the marketability and valuation of your business."
         />
 
-        <RiskClient initialFactors={factors} caseId={caseId} />
+        <RiskClient
+          initialFactors={factors}
+          caseId={caseId}
+          discoveryComplete={discoveryComplete}
+        />
 
         {/* Buy-sell page section */}
         <PageHeader
