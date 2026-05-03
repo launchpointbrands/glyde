@@ -7,17 +7,14 @@ import { ensureFinancials } from "@/lib/financials";
 import { createClient } from "@/lib/supabase/server";
 import { simulateValuation } from "@/lib/simulate";
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function normalizeDomain(input: string): string {
   return input
     .trim()
     .toLowerCase()
     .replace(/^https?:\/\//, "")
     .replace(/\/+$/, "");
-}
-
-function deriveBusinessName(domain: string): string {
-  const root = domain.split(".")[0] ?? domain;
-  return root.charAt(0).toUpperCase() + root.slice(1);
 }
 
 export async function createCase(formData: FormData) {
@@ -40,6 +37,24 @@ export async function createCase(formData: FormData) {
     );
   }
 
+  const contactName = String(formData.get("contact_name") ?? "").trim();
+  if (!contactName) {
+    redirect(
+      `/app/cases/new?error=${encodeURIComponent("Full name is required.")}`,
+    );
+  }
+
+  const contactEmailRaw = String(formData.get("contact_email") ?? "").trim();
+  if (contactEmailRaw && !EMAIL_RE.test(contactEmailRaw)) {
+    redirect(
+      `/app/cases/new?error=${encodeURIComponent("Enter a valid email address.")}`,
+    );
+  }
+  const contactEmail = contactEmailRaw || null;
+
+  const contactTitle =
+    String(formData.get("contact_title") ?? "").trim() || null;
+
   const domain = normalizeDomain(String(formData.get("domain") ?? ""));
   if (!domain) {
     redirect(
@@ -49,7 +64,7 @@ export async function createCase(formData: FormData) {
 
   const businessName =
     String(formData.get("business_name") ?? "").trim() ||
-    deriveBusinessName(domain);
+    `${contactName} Business`;
 
   const { data: cb, error: cbErr } = await supabase
     .from("client_businesses")
@@ -58,6 +73,9 @@ export async function createCase(formData: FormData) {
       firm_id: advisor.firm_id,
       business_name: businessName,
       domain,
+      contact_name: contactName,
+      contact_email: contactEmail,
+      contact_title: contactTitle,
       created_via: "advisor_manual",
     })
     .select("id")
@@ -115,5 +133,5 @@ export async function createCase(formData: FormData) {
   }
 
   revalidatePath("/app");
-  redirect(`/app/cases/${caseRow.id}/risk`);
+  redirect(`/app/processing?caseId=${caseRow.id}`);
 }

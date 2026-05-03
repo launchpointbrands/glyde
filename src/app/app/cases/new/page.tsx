@@ -8,77 +8,126 @@ export default async function NewCasePage({
   const { error } = await searchParams;
 
   return (
-    <main className="flex flex-1 items-center justify-center px-8">
-      <div className="w-full max-w-md space-y-6">
-        <div className="space-y-1">
-          <h1 className="text-page font-semibold text-text-primary">
-            Start with a client.
-          </h1>
-          <p className="text-meta text-text-secondary">
-            Domain is enough to begin. Everything else can be filled in later.
-          </p>
+    <main className="flex min-h-screen items-center justify-center px-6 py-10">
+      <form
+        action={createCase}
+        className="w-full max-w-[480px] rounded-[12px] border border-border-subtle bg-bg-card p-8 shadow-card"
+      >
+        <h1 className="text-[20px] font-semibold text-text-primary">
+          Add a client
+        </h1>
+        <p className="mt-1.5 text-[13px] text-text-secondary">
+          Start with the basics — you can fill in more during discovery.
+        </p>
+
+        <p className="mt-7 text-[11px] font-medium tracking-[0.05em] text-text-tertiary uppercase">
+          About the client
+        </p>
+
+        <div className="mt-3 flex flex-col gap-3">
+          <Field
+            id="contact_name"
+            label="Full name"
+            required
+            placeholder="Peter Smith"
+            autoComplete="name"
+          />
+          <Field
+            id="contact_email"
+            label="Email address"
+            type="email"
+            placeholder="peter@theirbusiness.com"
+            autoComplete="email"
+          />
+          <Field
+            id="contact_title"
+            label="Title"
+            placeholder="Owner, CEO, Managing Partner..."
+            autoComplete="organization-title"
+          />
         </div>
 
-        <form
-          action={createCase}
-          className="space-y-4 rounded-[10px] border border-border-subtle bg-bg-card px-6 py-6 shadow-card"
-        >
-          <div className="space-y-2">
-            <label
-              htmlFor="domain"
-              className="text-meta font-medium text-text-primary"
-            >
-              Business domain
-            </label>
-            <input
-              id="domain"
-              name="domain"
-              type="text"
-              required
-              autoComplete="off"
-              placeholder="precisionauto.com"
-              className={inputClass}
-            />
-          </div>
+        <p className="mt-5 text-[11px] font-medium tracking-[0.05em] text-text-tertiary uppercase">
+          About the business
+        </p>
 
-          <div className="space-y-2">
-            <label
-              htmlFor="business_name"
-              className="text-meta font-medium text-text-primary"
-            >
-              Business name{" "}
-              <span className="text-text-tertiary">(optional)</span>
-            </label>
-            <input
-              id="business_name"
-              name="business_name"
-              type="text"
-              autoComplete="off"
-              placeholder="Precision Auto Services"
-              className={inputClass}
-            />
-          </div>
+        <div className="mt-3 flex flex-col gap-3">
+          <Field
+            id="business_name"
+            label="Business name"
+            placeholder="Precision Auto Services"
+            autoComplete="organization"
+          />
+          <Field
+            id="domain"
+            label="Business domain"
+            required
+            placeholder="precisionauto.com"
+            autoComplete="off"
+            help="Used to find the company logo and generate an AI business description."
+          />
+        </div>
 
-          {error && (
-            <p
-              className="rounded-md border border-danger-border bg-danger-bg px-3 py-2 text-meta text-danger-fg"
-              role="alert"
-            >
-              {error}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            className="w-full rounded-md bg-green-400 px-3 py-2 text-meta font-medium text-text-inverse transition-colors hover:bg-green-600"
+        {error ? (
+          <p
+            role="alert"
+            className="mt-5 rounded-md border border-danger-border bg-danger-bg px-3 py-2 text-[13px] text-danger-text"
           >
-            Create case
-          </button>
-        </form>
-      </div>
+            {error}
+          </p>
+        ) : null}
+
+        <button
+          type="submit"
+          className="mt-6 w-full rounded-[8px] bg-green-400 px-4 py-2.5 text-[14px] font-medium text-text-inverse transition-colors hover:bg-green-600"
+        >
+          Create client →
+        </button>
+      </form>
     </main>
   );
 }
 
-const inputClass =
-  "w-full rounded-md border border-border-default bg-bg-input px-3 py-2 text-meta text-text-primary placeholder:text-text-tertiary transition-shadow focus:border-green-400 focus:outline-none focus:ring-[3px] focus:ring-green-50";
+function Field({
+  id,
+  label,
+  type = "text",
+  required,
+  placeholder,
+  autoComplete,
+  help,
+}: {
+  id: string;
+  label: string;
+  type?: string;
+  required?: boolean;
+  placeholder?: string;
+  autoComplete?: string;
+  help?: string;
+}) {
+  return (
+    <div>
+      <label
+        htmlFor={id}
+        className="block text-[13px] font-medium text-text-primary"
+      >
+        {label}
+        {required ? null : (
+          <span className="ml-1 text-text-tertiary">(optional)</span>
+        )}
+      </label>
+      <input
+        id={id}
+        name={id}
+        type={type}
+        required={required}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        className="mt-1.5 block w-full rounded-[8px] border border-border-default bg-bg-input px-3 py-2.5 text-[14px] text-text-primary placeholder:text-text-tertiary transition-shadow focus:border-green-400 focus:ring-[3px] focus:ring-green-50 focus:outline-none"
+      />
+      {help ? (
+        <p className="mt-1.5 text-[12px] text-text-tertiary">{help}</p>
+      ) : null}
+    </div>
+  );
+}
