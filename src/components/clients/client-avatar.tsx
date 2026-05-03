@@ -55,9 +55,7 @@ export function ClientAvatar({
             domain,
           )}&sz=64`}
           alt=""
-          width={32}
-          height={32}
-          className="h-8 w-8"
+          className="h-full w-full object-contain p-0.5"
           onError={() => setStage("initials")}
         />
       )}
