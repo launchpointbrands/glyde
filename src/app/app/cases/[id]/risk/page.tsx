@@ -277,7 +277,7 @@ export default async function RiskPage({
           </div>
         </div>
 
-        <FooterActions />
+        <FooterActions caseId={caseId} reportType="risk" />
       </div>
     </main>
   );

@@ -394,7 +394,7 @@ export default async function ValuationPage({
           </dl>
         </section>
 
-        <FooterActions />
+        <FooterActions caseId={caseId} reportType="valuation" />
       </div>
     </main>
   );

@@ -254,7 +254,7 @@ export default async function WealthPage({
           </div>
         </div>
 
-        <FooterActions />
+        <FooterActions caseId={caseId} reportType="wealth" />
       </div>
     </main>
   );

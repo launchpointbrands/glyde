@@ -1,0 +1,165 @@
+import {
+  Page,
+  Path,
+  Svg,
+  Text,
+  View,
+} from "@react-pdf/renderer";
+import { C, styles } from "./pdf-tokens";
+
+// Path data for the "GLYDEPATH" wordmark, lifted from
+// public/brand/glyde-wordmark.svg (the 9 letterforms only — the icon
+// glyph is omitted to keep the cover clean).
+const WORDMARK_PATHS = [
+  "M184.7,74.9c0-28.3,20.9-44.6,46.3-44.6s28.8,6.8,36,14.9l-10.8,9.8c-5.9-6.4-14.6-10.5-25-10.5-16.9,0-29.1,10.8-29.1,30s12.2,30.3,30.3,30.3,15.7-2,20.8-6.4v-15h-21.4v-13.1h37.7v34.5c-9.5,9.4-23.1,14.3-37.7,14.3-26,0-46.9-15.5-46.9-43.9Z",
+  "M284,31.8h16.5v85.6h-16.5V31.8Z",
+  "M314.5,138.5l3.4-12.3c2.6,1,4.9,1.9,7.6,1.9s5.2-1.1,6.4-4.1l2.7-6.2-25.9-60.4h17.7l16.1,42.7,15.9-42.7h17.7l-29,68c-4.5,10.5-11.3,15.6-20.6,15.6s-9.5-1.4-11.9-2.5Z",
+  "M378.5,87.3c0-17.1,11.6-31.3,30.6-31.3s15.2,3,20.1,9.4c-.1-1.7-.3-5.1-.3-8.3v-25.4h16.5v85.6h-15.9v-9.5c-6.1,8.2-13.7,10.9-21.7,10.9-18.2,0-29.4-13.8-29.4-31.4ZM429.4,87.6c0-9.9-6.7-18.6-17.3-18.6s-16.6,8.7-16.6,18.6,6.4,18.2,17.2,18.2,16.8-7.2,16.8-18.2Z",
+  "M457.4,88.1c0-19.1,14.3-32,33.1-32s30,12.2,30,28.6-.3,7.1-.4,8.3h-45.1c1.8,9.2,9,13.4,17.8,13.4s14.8-3.2,18.3-6.7l6.7,8.8c-3.5,3.7-14.1,10.2-27.6,10.2s-32.9-11-32.9-30.6ZM489.7,68c-9.5,0-13.7,6.9-15,13.9h29.5c-.1-6.2-4.1-13.9-14.6-13.9Z",
+  "M533.2,31.8h28.6c18.7,0,31.6,9.7,31.6,26.2s-13.8,27.2-31.6,27.2h-11.9v32.2h-16.8V31.8ZM576.2,57.9c0-8.6-6.8-12.5-16.8-12.5h-9.4v26h9.8c9.3,0,16.4-4.5,16.4-13.5Z",
+  "M598.4,100.3c0-13.3,12.5-17.9,25.4-18.7l15-1v-1.6c0-6.9-4.9-11-14.1-11s-12.1,2.2-17.5,5.3l-5.2-10.9c8.4-4.6,16.6-6.3,25.1-6.3,18.6,0,28.1,8.3,28.1,26.9v34.4h-15.9v-6.9c-2.6,4.3-9.9,8.3-19.3,8.3s-21.7-6.6-21.7-18.4ZM638.8,101.3v-11.2l-11,.7c-8.8.6-12.8,3.3-12.8,8.4s4.3,8.6,10.2,8.6,11.3-3.6,13.5-6.6Z",
+  "M672.8,97.5v-27.8h-8.9v-12.3h8.9v-17.1h16.5v17.1h14.4v12.3h-14.4v25.2c0,7.7,1.3,10.9,7.5,10.9s4.6-.6,6.2-1.4l.9,12.3c-3.6,1.2-7.9,2-12.2,2-15.1,0-18.8-7.8-18.8-21.2Z",
+  "M714.5,31.8h16.5v25.3c0,3.6-.1,7.8-.3,9.7,4.1-6.8,11-10.7,19.7-10.7,17,0,21.8,11.3,21.8,25.7v35.6h-16.5v-32.5c0-8.4-1.3-15.7-11.1-15.7s-13.7,8.3-13.7,18.5v29.8h-16.5V31.8Z",
+];
+
+export type CoverProps = {
+  reportTitle: string;
+  contactName: string;
+  businessName: string;
+  advisorName: string;
+  advisorTitle: string;
+  preparedAt: string;
+};
+
+export function PdfCover({
+  reportTitle,
+  contactName,
+  businessName,
+  advisorName,
+  advisorTitle,
+  preparedAt,
+}: CoverProps) {
+  return (
+    <Page
+      size="LETTER"
+      style={{
+        backgroundColor: C.bgCard,
+        paddingTop: 72,
+        paddingBottom: 60,
+        paddingHorizontal: 54,
+        fontFamily: "DM Sans",
+        color: C.textPrimary,
+      }}
+    >
+      <Svg
+        viewBox="184 30 597 90"
+        style={{ width: 200, height: 28, marginBottom: 60 }}
+      >
+        {WORDMARK_PATHS.map((d, i) => (
+          <Path key={i} d={d} fill={C.textPrimary} />
+        ))}
+      </Svg>
+
+      <Text style={styles.eyebrow}>Confidential report</Text>
+      <Text
+        style={{
+          fontSize: 32,
+          fontWeight: 600,
+          marginTop: 8,
+          color: C.textPrimary,
+        }}
+      >
+        {reportTitle}
+      </Text>
+
+      <View
+        style={{
+          marginTop: 40,
+          paddingTop: 16,
+          borderTopWidth: 1,
+          borderTopColor: C.borderSubtle,
+        }}
+      >
+        <Text style={styles.eyebrow}>Client</Text>
+        <Text
+          style={{
+            fontSize: 18,
+            fontWeight: 600,
+            marginTop: 4,
+            color: C.textPrimary,
+          }}
+        >
+          {contactName}
+        </Text>
+        <Text
+          style={{ fontSize: 12, color: C.textSecondary, marginTop: 2 }}
+        >
+          {businessName}
+        </Text>
+      </View>
+
+      <View
+        style={{
+          marginTop: 24,
+          flexDirection: "row",
+          justifyContent: "space-between",
+        }}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={styles.eyebrow}>Prepared by</Text>
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: 500,
+              marginTop: 4,
+              color: C.textPrimary,
+            }}
+          >
+            {advisorName}
+          </Text>
+          {advisorTitle ? (
+            <Text style={{ fontSize: 10, color: C.textSecondary, marginTop: 2 }}>
+              {advisorTitle}
+            </Text>
+          ) : null}
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.eyebrow}>Date prepared</Text>
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: 500,
+              marginTop: 4,
+              color: C.textPrimary,
+            }}
+          >
+            {preparedAt}
+          </Text>
+        </View>
+      </View>
+
+      {/* Pushes the confidentiality block to the bottom. */}
+      <View style={{ flexGrow: 1 }} />
+
+      <View
+        style={{
+          paddingTop: 16,
+          borderTopWidth: 1,
+          borderTopColor: C.borderSubtle,
+        }}
+      >
+        <Text style={styles.eyebrow}>Confidentiality notice</Text>
+        <Text
+          style={{
+            fontSize: 8.5,
+            color: C.textSecondary,
+            marginTop: 6,
+            lineHeight: 1.55,
+          }}
+        >
+          {`This report was prepared by ${advisorName} for the exclusive use of ${contactName} and ${businessName}. This document is confidential and intended solely for the recipient. It may not be reproduced, distributed, or shared without prior written consent.`}
+        </Text>
+      </View>
+    </Page>
+  );
+}

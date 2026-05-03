@@ -356,7 +356,7 @@ export default async function SuccessionPage({
           </div>
         </div>
 
-        <FooterActions />
+        <FooterActions caseId={caseId} reportType="succession" />
       </div>
     </main>
   );
