@@ -1,5 +1,5 @@
-import { DashboardEmptyState } from "@/components/dashboard/empty-state";
 import { FooterActions } from "@/components/dashboard/footer-actions";
+import { GeneratingReport } from "@/components/dashboard/generating-report";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { SeverityHero } from "@/components/dashboard/severity-hero";
 import type { Severity } from "@/components/dashboard/severity-pill";
@@ -53,7 +53,7 @@ export default async function WealthPage({
   ]);
 
   if (!plan) {
-    return <DashboardEmptyState caseId={caseId} reportName="wealth blueprint" />;
+    return <GeneratingReport title="Business Wealth Blueprint" />;
   }
 
   const currentValuation = valuation?.valuation_estimate ?? 0;

@@ -6,8 +6,8 @@ import {
   Wrench,
 } from "lucide-react";
 import { Donut } from "@/components/dashboard/donut";
-import { DashboardEmptyState } from "@/components/dashboard/empty-state";
 import { FooterActions } from "@/components/dashboard/footer-actions";
+import { GeneratingReport } from "@/components/dashboard/generating-report";
 import { PageHeader } from "@/components/dashboard/page-header";
 import {
   ReadinessChecklist,
@@ -113,7 +113,7 @@ export default async function SuccessionPage({
   ]);
 
   if (!plan) {
-    return <DashboardEmptyState caseId={caseId} reportName="succession" />;
+    return <GeneratingReport title="Succession Plan" />;
   }
 
   const itemByKey = new Map(

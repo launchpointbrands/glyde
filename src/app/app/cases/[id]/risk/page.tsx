@@ -1,6 +1,6 @@
 import { Building2, ScrollText, Users } from "lucide-react";
-import { DashboardEmptyState } from "@/components/dashboard/empty-state";
 import { FooterActions } from "@/components/dashboard/footer-actions";
+import { GeneratingReport } from "@/components/dashboard/generating-report";
 import { PageHeader } from "@/components/dashboard/page-header";
 import {
   RiskClient,
@@ -58,7 +58,7 @@ export default async function RiskPage({
     .maybeSingle();
 
   if (!assessment) {
-    return <DashboardEmptyState caseId={caseId} reportName="risk" />;
+    return <GeneratingReport title="Business Risk Assessment" />;
   }
 
   const factors = (assessment.factors ?? []) as RiskFactor[];

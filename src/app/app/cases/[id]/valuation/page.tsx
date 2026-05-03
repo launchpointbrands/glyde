@@ -1,6 +1,6 @@
 import { TriangleAlert } from "lucide-react";
-import { DashboardEmptyState } from "@/components/dashboard/empty-state";
 import { FooterActions } from "@/components/dashboard/footer-actions";
+import { GeneratingReport } from "@/components/dashboard/generating-report";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { ValuationScaleBar } from "@/components/dashboard/valuation-scale-bar";
 import { EditableValue } from "@/components/valuation/editable-value";
@@ -89,7 +89,7 @@ export default async function ValuationPage({
     ]);
 
   if (!snap) {
-    return <DashboardEmptyState caseId={caseId} reportName="valuation" />;
+    return <GeneratingReport title="Business Valuation Report" />;
   }
 
   const ownerPct = caseRow?.ownership_pct ?? 100;
