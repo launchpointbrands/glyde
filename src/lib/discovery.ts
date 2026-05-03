@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { evaluateRiskFactors } from "@/lib/risk";
 import { createClient } from "@/lib/supabase/server";
 
 type ResponseValue = string | number | null;
@@ -16,6 +17,17 @@ async function requireAdvisor() {
 
 function revalidateDiscovery(caseId: string) {
   revalidatePath(`/app/cases/${caseId}/discovery`);
+}
+
+// Re-evaluate risk factors from the latest discovery state. Wrapped in
+// try/catch so an evaluator failure can never block the discovery save
+// itself — the page-load lazy path will retry on next visit.
+async function reevaluate(caseId: string) {
+  try {
+    await evaluateRiskFactors(caseId);
+  } catch (e) {
+    console.error("evaluateRiskFactors (discovery) failed", e);
+  }
 }
 
 // Edit through the UI = advisor owns it. Source flips to 'advisor',
@@ -41,6 +53,7 @@ export async function saveResponse(
   );
 
   if (error) throw new Error(error.message);
+  await reevaluate(caseId);
   revalidateDiscovery(caseId);
 }
 
@@ -62,6 +75,7 @@ export async function verifyResponse(caseId: string, fieldKey: string) {
     .eq("field_key", fieldKey);
 
   if (error) throw new Error(error.message);
+  await reevaluate(caseId);
   revalidateDiscovery(caseId);
 }
 
@@ -80,6 +94,7 @@ export async function verifyAllSimulated(caseId: string) {
     .eq("source", "simulated");
 
   if (error) throw new Error(error.message);
+  await reevaluate(caseId);
   revalidateDiscovery(caseId);
 }
 
@@ -100,6 +115,7 @@ export async function markSkipped(caseId: string, fieldKey: string) {
   );
 
   if (error) throw new Error(error.message);
+  await reevaluate(caseId);
   revalidateDiscovery(caseId);
 }
 
@@ -120,6 +136,7 @@ export async function markUnknown(caseId: string, fieldKey: string) {
   );
 
   if (error) throw new Error(error.message);
+  await reevaluate(caseId);
   revalidateDiscovery(caseId);
 }
 
@@ -133,5 +150,6 @@ export async function clearResponse(caseId: string, fieldKey: string) {
     .eq("field_key", fieldKey);
 
   if (error) throw new Error(error.message);
+  await reevaluate(caseId);
   revalidateDiscovery(caseId);
 }

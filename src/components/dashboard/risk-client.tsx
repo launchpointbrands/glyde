@@ -115,6 +115,21 @@ const FACTOR_ANSWER: Record<string, (f: RiskFactor) => FactorAnswer> = {
           ? String(f.computed_value)
           : "—",
   }),
+  buy_sell: (f) => {
+    const labelMap: Record<string, string> = {
+      none: "None on file",
+      in_place: "In place",
+      needs_review: "Needs review",
+      outdated: "Outdated",
+    };
+    return {
+      eyebrow: "Buy-sell",
+      value:
+        typeof f.source_value === "string"
+          ? (labelMap[f.source_value] ?? f.source_value)
+          : "—",
+    };
+  },
 };
 
 type Tab = "all" | "high" | "moderate" | "low";

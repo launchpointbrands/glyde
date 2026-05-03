@@ -11,6 +11,7 @@ import { StatCard, StatCardHeading } from "@/components/dashboard/stat-card";
 import type { Severity } from "@/components/dashboard/severity-pill";
 import { STEPS, TOTAL_STEPS } from "@/lib/discovery-walkthrough";
 import { ensureFinancials } from "@/lib/financials";
+import { evaluateRiskFactors } from "@/lib/risk";
 import { createClient } from "@/lib/supabase/server";
 
 const formatUSDFull = (n: number | null | undefined) =>
@@ -76,16 +77,6 @@ export default async function RiskPage({
     return <GeneratingReport title="Business Risk Assessment" />;
   }
 
-  const factors = (assessment.factors ?? []) as RiskFactor[];
-  const buySellStatus = (assessment.buy_sell_status ?? "none") as string;
-  const buySellSeverity =
-    BUY_SELL_SEVERITY[buySellStatus] ?? ("moderate" as Severity);
-
-  // Equity figure reads from valuation_snapshots — single source of truth
-  // for valuation. risk_assessments.equity_at_risk_value is no longer
-  // referenced here so it can't drift if the valuation gets updated.
-  const equityValueOwned = valuation?.equity_value_owned ?? null;
-
   // Mirror the case layout's verified-count / completion definition so
   // the empty-factors panel below can show the right copy + CTA when
   // discovery is fully done vs. still pending.
@@ -100,6 +91,38 @@ export default async function RiskPage({
     return r?.status === "answered" && r.source !== "simulated";
   }).length;
   const discoveryComplete = verifiedCount === TOTAL_STEPS;
+
+  let factors = (assessment.factors ?? []) as RiskFactor[];
+  const buySellStatus = (assessment.buy_sell_status ?? "none") as string;
+  const buySellSeverity =
+    BUY_SELL_SEVERITY[buySellStatus] ?? ("moderate" as Severity);
+
+  // Lazy-evaluate factors when the row is empty but the advisor has
+  // verified at least one discovery answer. Self-heals existing cases
+  // created before the evaluator existed; new cases evaluate on each
+  // discovery save and shouldn't hit this path.
+  if (factors.length === 0 && verifiedCount > 0) {
+    try {
+      await evaluateRiskFactors(caseId);
+      const { data: refetched } = await supabase
+        .from("risk_assessments")
+        .select("factors")
+        .eq("case_id", caseId)
+        .order("computed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (refetched?.factors) {
+        factors = refetched.factors as RiskFactor[];
+      }
+    } catch (e) {
+      console.error("evaluateRiskFactors (risk page) failed", e);
+    }
+  }
+
+  // Equity figure reads from valuation_snapshots — single source of truth
+  // for valuation. risk_assessments.equity_at_risk_value is no longer
+  // referenced here so it can't drift if the valuation gets updated.
+  const equityValueOwned = valuation?.equity_value_owned ?? null;
 
   return (
     <main className="flex flex-1 flex-col px-5 pt-8 pb-12 md:px-10 md:pt-10 md:pb-16">
