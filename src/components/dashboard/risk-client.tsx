@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronRight, TriangleAlert } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { Severity } from "./severity-pill";
 
@@ -22,6 +23,11 @@ function recompute(factors: RiskFactor[]): {
   impactLow: number;
   impactHigh: number;
 } {
+  // Empty factors (no discovery yet) → conservative defaults rather
+  // than the zero-count "low / 0-0%" the count math would produce.
+  if (factors.length === 0) {
+    return { overall: "moderate", impactLow: 3, impactHigh: 6 };
+  }
   const highs = factors.filter((f) => f.severity === "high").length;
   const mods = factors.filter((f) => f.severity === "moderate").length;
   const overall: Severity =
@@ -139,8 +145,10 @@ const RISK_TONE: Record<
 
 export function RiskClient({
   initialFactors,
+  caseId,
 }: {
   initialFactors: RiskFactor[];
+  caseId: string;
 }) {
   const [openKey, setOpenKey] = useState<string | null>(null);
 
@@ -148,6 +156,8 @@ export function RiskClient({
     () => recompute(initialFactors),
     [initialFactors],
   );
+
+  const isEmpty = initialFactors.length === 0;
 
   return (
     <>
@@ -186,12 +196,34 @@ export function RiskClient({
         </div>
       </section>
 
-      <TabbedFactorTable
-        factors={initialFactors}
-        openKey={openKey}
-        onToggle={(key) => setOpenKey((k) => (k === key ? null : key))}
-      />
+      {isEmpty ? (
+        <EmptyFactorsPanel caseId={caseId} />
+      ) : (
+        <TabbedFactorTable
+          factors={initialFactors}
+          openKey={openKey}
+          onToggle={(key) => setOpenKey((k) => (k === key ? null : key))}
+        />
+      )}
     </>
+  );
+}
+
+function EmptyFactorsPanel({ caseId }: { caseId: string }) {
+  return (
+    <div className="mb-8 rounded-[10px] border border-border-subtle bg-bg-card p-7 text-center shadow-card">
+      <p className="mx-auto max-w-md text-meta text-text-secondary">
+        Complete discovery to generate a detailed risk factor analysis for this
+        client. Each of the 8 risk factors will be scored based on their
+        specific situation.
+      </p>
+      <Link
+        href={`/app/cases/${caseId}/discovery/walkthrough?q=1`}
+        className="mt-4 inline-block text-meta font-medium text-green-600 transition-colors hover:text-green-800"
+      >
+        Continue discovery →
+      </Link>
+    </div>
   );
 }
 
