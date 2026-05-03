@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { generateBusinessDescription } from "@/lib/business-description";
 import { ensureFinancials } from "@/lib/financials";
 import { createClient } from "@/lib/supabase/server";
-import { simulateValuation } from "@/lib/simulate";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -104,13 +103,6 @@ export async function createCase(formData: FormData) {
     );
   }
 
-  const sim = simulateValuation(domain);
-  await supabase.from("valuation_snapshots").insert({
-    case_id: caseRow.id,
-    source: "simulated",
-    ...sim,
-  });
-
   // Best-effort: kick off the AI business description. A failure here
   // (no API key, network) shouldn't block the redirect into the case.
   try {
@@ -123,9 +115,10 @@ export async function createCase(formData: FormData) {
     console.error("generateBusinessDescription (createCase) failed", e);
   }
 
-  // Generate AI-powered realistic financial estimates and populate the
-  // four module tables. Idempotent + try/catch'd inside ensureFinancials;
-  // simulator fallback ensures dashboards always render.
+  // Generate AI-powered realistic financial estimates and populate
+  // valuation_snapshots / risk_assessments / wealth_plans /
+  // succession_plans. Self-healing on partial failure; falls back to
+  // the clamped simulator if AI is unavailable.
   try {
     await ensureFinancials({ caseId: caseRow.id });
   } catch (e) {

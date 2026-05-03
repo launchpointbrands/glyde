@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { generateBusinessDescription } from "@/lib/business-description";
 import { ensureFinancials } from "@/lib/financials";
 import { createClient } from "@/lib/supabase/server";
-import { simulateValuation } from "@/lib/simulate";
 
 const PETER_SMITH_DESCRIPTION =
   "Precision Auto Services is a partnership-structured automotive parts manufacturer serving commercial and industrial clients. The business generates approximately $5.8M in annual revenue with strong recurring customer relationships. Peter Smith serves as the primary owner and operator.";
@@ -184,13 +183,6 @@ export async function completeOnboardingWithClient(formData: FormData) {
     );
   }
 
-  const sim = simulateValuation(domain);
-  await supabase.from("valuation_snapshots").insert({
-    case_id: caseRow.id,
-    source: "simulated",
-    ...sim,
-  });
-
   // Best-effort: kick off the AI business description. A failure here
   // (no API key, network) shouldn't block the redirect into discovery.
   try {
@@ -203,10 +195,10 @@ export async function completeOnboardingWithClient(formData: FormData) {
     console.error("generateBusinessDescription (onboarding) failed", e);
   }
 
-  // AI-powered financials so the case lands on dashboards with
-  // realistic numbers (revenue, EBITDA, multiples, working capital,
-  // debt). Idempotent + falls back to the clamped simulator on
-  // failure inside ensureFinancials.
+  // AI-powered financials populate valuation_snapshots /
+  // risk_assessments / wealth_plans / succession_plans. Self-healing
+  // on partial failure; falls back to the clamped simulator if AI is
+  // unavailable.
   try {
     await ensureFinancials({ caseId: caseRow.id });
   } catch (e) {

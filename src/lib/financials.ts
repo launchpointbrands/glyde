@@ -1,10 +1,13 @@
 "use server";
 
-// AI-powered realistic financial estimation for a case. Idempotent:
-// short-circuits when the case is the demo seed, when an estimate is
-// cached on the row, or when valuation_snapshots is already populated.
-// Falls back to the deterministic simulator if the API call fails so
-// dashboards never render empty for new cases.
+// AI-powered realistic financial estimation for a case. Self-healing:
+// short-circuits ONLY when the case is the demo seed or when all four
+// module rows already exist. If the cache claims completion but any
+// row is missing, the function treats the case as a partial-run, clears
+// the cache, and refills. Every insert error is surfaced (not swallowed)
+// so partial runs cannot stamp the cache and lock the case into an
+// empty-dashboard state. Falls back to the deterministic simulator if
+// the AI call fails.
 
 import Anthropic from "@anthropic-ai/sdk";
 import {
@@ -98,7 +101,6 @@ function clampEstimates(raw: Partial<FinancialEstimates>): FinancialEstimates {
 }
 
 function tryParseJson(text: string): Partial<FinancialEstimates> | null {
-  // Strip markdown fences if the model wrapped the JSON.
   const cleaned = text
     .replace(/^\s*```(?:json)?\s*/i, "")
     .replace(/\s*```\s*$/, "")
@@ -106,7 +108,6 @@ function tryParseJson(text: string): Partial<FinancialEstimates> | null {
   try {
     return JSON.parse(cleaned);
   } catch {
-    // Salvage: find the first {...} block.
     const m = cleaned.match(/\{[\s\S]*\}/);
     if (!m) return null;
     try {
@@ -126,7 +127,10 @@ async function callAnthropic(args: {
   discoveryAnswers: Record<string, unknown>;
 }): Promise<FinancialEstimates | null> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) {
+    console.warn("[ensureFinancials] ANTHROPIC_API_KEY not set; falling back to simulator");
+    return null;
+  }
 
   const userMessage = `Business name: ${args.businessName}
 Domain: ${args.domain}
@@ -232,21 +236,52 @@ export async function ensureFinancials({
     .eq("id", caseId)
     .maybeSingle();
 
-  if (!caseRow) return;
+  if (!caseRow) {
+    console.warn(`[ensureFinancials ${caseId}] case not found`);
+    return;
+  }
   // Never touch the demo seed.
   if (caseRow.label === "demo") return;
-  // Cached — already generated.
-  if (caseRow.financial_estimates) return;
 
-  // Guard against a partial prior run that wrote valuation_snapshots
-  // but failed to cache; if a snapshot already exists, only fill the
-  // other tables.
-  const { data: existingSnap } = await supabase
-    .from("valuation_snapshots")
-    .select("id")
-    .eq("case_id", caseId)
-    .limit(1)
-    .maybeSingle();
+  // Self-healing cache check: short-circuit ONLY if every module row
+  // actually exists. If cache claims completion but any row is missing,
+  // we treat this as a partial run, clear the cache, and refill below.
+  const [{ data: snap }, { data: risk }, { data: wealth }, { data: succ }] =
+    await Promise.all([
+      supabase
+        .from("valuation_snapshots")
+        .select("id")
+        .eq("case_id", caseId)
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("risk_assessments")
+        .select("id")
+        .eq("case_id", caseId)
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("wealth_plans")
+        .select("id")
+        .eq("case_id", caseId)
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("succession_plans")
+        .select("id")
+        .eq("case_id", caseId)
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+  const allFourPresent = Boolean(snap && risk && wealth && succ);
+  if (caseRow.financial_estimates && allFourPresent) return;
+
+  if (caseRow.financial_estimates && !allFourPresent) {
+    console.warn(
+      `[ensureFinancials ${caseId}] cache set but partial state — snap:${Boolean(snap)} risk:${Boolean(risk)} wealth:${Boolean(wealth)} succession:${Boolean(succ)} — refilling missing rows`,
+    );
+  }
 
   const cb = Array.isArray(caseRow.client_business)
     ? caseRow.client_business[0]
@@ -257,7 +292,6 @@ export async function ensureFinancials({
   const description = (cb?.business_description as string | null) ?? null;
   const ownershipPct = (caseRow.ownership_pct as number | null) ?? 100;
 
-  // Pull discovery answers for prompt context.
   const { data: responses } = await supabase
     .from("discovery_responses")
     .select("field_key, value")
@@ -272,9 +306,9 @@ export async function ensureFinancials({
   const naicsFromDiscovery =
     (discoveryAnswers["industry_naics"] as string | null | undefined) ?? null;
 
-  // Try AI; fall back to clamped simulator.
   let estimates: FinancialEstimates | null = null;
   try {
+    console.log(`[ensureFinancials ${caseId}] calling Anthropic`);
     estimates = await callAnthropic({
       businessName,
       domain,
@@ -283,8 +317,13 @@ export async function ensureFinancials({
       employeeCount: employeeCount as number | string | null,
       discoveryAnswers,
     });
+    if (estimates) {
+      console.log(`[ensureFinancials ${caseId}] AI estimates received`);
+    } else {
+      console.warn(`[ensureFinancials ${caseId}] AI returned null; falling back to simulator`);
+    }
   } catch (e) {
-    console.error("ensureFinancials AI call failed", e);
+    console.error(`[ensureFinancials ${caseId}] AI call threw`, e);
   }
 
   let source: "ai" | "simulated" = "ai";
@@ -312,64 +351,65 @@ export async function ensureFinancials({
     riskScore === "low" ? 2 : riskScore === "moderate" ? 6 : 15;
 
   // 1. valuation_snapshots
-  if (!existingSnap) {
-    await supabase.from("valuation_snapshots").insert({
-      case_id: caseId,
-      source,
-      valuation_low: v.valuation_low,
-      valuation_estimate: v.valuation_estimate,
-      valuation_high: v.valuation_high,
-      equity_value_owned: v.equity_value_owned,
-      naics_code: naicsFromDiscovery,
-      ebitda_multiple: estimates.ebitda_multiple,
-      revenue_multiple: estimates.revenue_multiple,
-      revenue_ttm: estimates.revenue_ttm,
-      normalized_ebitda: estimates.ebitda,
-      net_working_capital: estimates.working_capital,
-      interest_bearing_debt: estimates.total_debt,
-      balance_sheet_impact: v.balance_sheet_impact,
-      risk_score: riskScore,
-      risk_impact_pct_low: riskImpactLow,
-      risk_impact_pct_high: riskImpactHigh,
-    });
+  let valuationSnapshotId: string | null = (snap?.id as string | null) ?? null;
+  if (!snap) {
+    const { data: inserted, error } = await supabase
+      .from("valuation_snapshots")
+      .insert({
+        case_id: caseId,
+        source,
+        valuation_low: v.valuation_low,
+        valuation_estimate: v.valuation_estimate,
+        valuation_high: v.valuation_high,
+        equity_value_owned: v.equity_value_owned,
+        naics_code: naicsFromDiscovery,
+        ebitda_multiple: estimates.ebitda_multiple,
+        revenue_multiple: estimates.revenue_multiple,
+        revenue_ttm: estimates.revenue_ttm,
+        normalized_ebitda: estimates.ebitda,
+        net_working_capital: estimates.working_capital,
+        interest_bearing_debt: estimates.total_debt,
+        balance_sheet_impact: v.balance_sheet_impact,
+        risk_score: riskScore,
+        risk_impact_pct_low: riskImpactLow,
+        risk_impact_pct_high: riskImpactHigh,
+      })
+      .select("id")
+      .single();
+    if (error || !inserted) {
+      console.error(`[ensureFinancials ${caseId}] valuation_snapshots insert failed`, error);
+      throw new Error(`valuation_snapshots insert failed: ${error?.message ?? "unknown"}`);
+    }
+    valuationSnapshotId = inserted.id as string;
   }
 
-  // 2. risk_assessments — minimal default; the dashboard can be
-  // recomputed by other code as discovery answers come in.
-  const buySellStatus =
-    (discoveryAnswers["buy_sell_status"] as string | null) ?? "none";
-  const { data: existingRisk } = await supabase
-    .from("risk_assessments")
-    .select("id")
-    .eq("case_id", caseId)
-    .limit(1)
-    .maybeSingle();
-  if (!existingRisk) {
-    await supabase.from("risk_assessments").insert({
+  // 2. risk_assessments
+  if (!risk) {
+    const buySellStatus =
+      (discoveryAnswers["buy_sell_status"] as string | null) ?? "none";
+    const { error } = await supabase.from("risk_assessments").insert({
       case_id: caseId,
       overall_risk: riskScore,
       factors: [],
       buy_sell_status: buySellStatus,
       equity_at_risk_value: v.equity_value_owned,
       risk_to_equity: riskScore,
-      valuation_snapshot_id: null,
+      valuation_snapshot_id: valuationSnapshotId,
     });
+    if (error) {
+      console.error(`[ensureFinancials ${caseId}] risk_assessments insert failed`, error);
+      throw new Error(`risk_assessments insert failed: ${error.message}`);
+    }
   }
 
-  // 3. wealth_plans — sensible defaults derived from the financials.
-  const goalEbitda = Math.round(estimates.ebitda * 1.5);
-  const goalValuation = Math.round(v.valuation_estimate * 1.3);
-  const netProceedsTarget = Math.round(goalValuation * 0.7);
-  const goalRevenueGrowth = Math.max(estimates.revenue_growth_rate, 0.1);
-  const exitYear = new Date().getFullYear() + 7;
-  const { data: existingWealth } = await supabase
-    .from("wealth_plans")
-    .select("id")
-    .eq("case_id", caseId)
-    .limit(1)
-    .maybeSingle();
-  if (!existingWealth) {
-    await supabase.from("wealth_plans").insert({
+  // 3. wealth_plans
+  if (!wealth) {
+    const goalEbitda = Math.round(estimates.ebitda * 1.5);
+    const goalValuation = Math.round(v.valuation_estimate * 1.3);
+    const netProceedsTarget = Math.round(goalValuation * 0.7);
+    const goalRevenueGrowth = Math.max(estimates.revenue_growth_rate, 0.1);
+    const exitYear = new Date().getFullYear() + 7;
+    const { error } = await supabase.from("wealth_plans").insert({
       case_id: caseId,
       net_proceeds_target: netProceedsTarget,
       exit_year: exitYear,
@@ -385,26 +425,35 @@ export async function ensureFinancials({
         estimates.revenue_growth_rate,
       ),
     });
+    if (error) {
+      console.error(`[ensureFinancials ${caseId}] wealth_plans insert failed`, error);
+      throw new Error(`wealth_plans insert failed: ${error.message}`);
+    }
   }
 
-  // 4. succession_plans — minimal default; advisor edits later.
-  const { data: existingSucc } = await supabase
-    .from("succession_plans")
-    .select("id")
-    .eq("case_id", caseId)
-    .limit(1)
-    .maybeSingle();
-  if (!existingSucc) {
-    await supabase.from("succession_plans").insert({
+  // 4. succession_plans
+  if (!succ) {
+    const { error } = await supabase.from("succession_plans").insert({
       case_id: caseId,
       selected_path: "third_party",
       priorities: PRIORITY_DEFAULTS,
     });
+    if (error) {
+      console.error(`[ensureFinancials ${caseId}] succession_plans insert failed`, error);
+      throw new Error(`succession_plans insert failed: ${error.message}`);
+    }
   }
 
-  // Cache the raw estimates so subsequent loads short-circuit.
-  await supabase
+  // Cache last — only after every required insert succeeded. A throw above
+  // skips this, leaving financial_estimates null so the next dashboard load
+  // retries the missing rows.
+  const { error: cacheErr } = await supabase
     .from("cases")
     .update({ financial_estimates: { ...estimates, source } })
     .eq("id", caseId);
+  if (cacheErr) {
+    console.error(`[ensureFinancials ${caseId}] cache write failed`, cacheErr);
+  } else {
+    console.log(`[ensureFinancials ${caseId}] complete (source=${source})`);
+  }
 }
