@@ -1,22 +1,38 @@
+import path from "node:path";
 import { Font, StyleSheet } from "@react-pdf/renderer";
 
-// DM Sans + DM Mono served from the official googlefonts repo.
-// Registered once at module load so every PDF page uses the same fonts.
-// Falls back to Helvetica/Courier if a fetch fails.
+// DM Sans + DM Mono bundled locally in public/fonts. Loading from the
+// filesystem instead of fetching at runtime — three of the upstream
+// raw.githubusercontent URLs we used previously returned 404 (DM Sans
+// has no static SemiBold instance, and DM Mono lives in a separate
+// repo) and @fontsource ships .woff only, which react-pdf can't read.
+//
+// pdf-tokens.ts is only ever imported server-side (route handler), so
+// process.cwd() resolves to the project root in dev and to /var/task
+// in Vercel — both contain the bundled public/fonts directory.
+const FONTS_DIR = path.join(process.cwd(), "public", "fonts");
+
 Font.register({
   family: "DM Sans",
   fonts: [
     {
-      src: "https://raw.githubusercontent.com/googlefonts/dm-fonts/main/Sans/Exports/DMSans-Regular.ttf",
+      src: path.join(FONTS_DIR, "DMSans-Regular.ttf"),
       fontWeight: 400,
     },
     {
-      src: "https://raw.githubusercontent.com/googlefonts/dm-fonts/main/Sans/Exports/DMSans-Medium.ttf",
+      src: path.join(FONTS_DIR, "DMSans-Medium.ttf"),
       fontWeight: 500,
     },
+    // DM Sans has no static SemiBold cut. Register Bold under both
+    // 600 and 700 so existing fontWeight: 600 callsites resolve to
+    // Bold cleanly without a sweep through the components.
     {
-      src: "https://raw.githubusercontent.com/googlefonts/dm-fonts/main/Sans/Exports/DMSans-SemiBold.ttf",
+      src: path.join(FONTS_DIR, "DMSans-Bold.ttf"),
       fontWeight: 600,
+    },
+    {
+      src: path.join(FONTS_DIR, "DMSans-Bold.ttf"),
+      fontWeight: 700,
     },
   ],
 });
@@ -25,11 +41,11 @@ Font.register({
   family: "DM Mono",
   fonts: [
     {
-      src: "https://raw.githubusercontent.com/googlefonts/dm-fonts/main/Mono/Exports/DMMono-Regular.ttf",
+      src: path.join(FONTS_DIR, "DMMono-Regular.ttf"),
       fontWeight: 400,
     },
     {
-      src: "https://raw.githubusercontent.com/googlefonts/dm-fonts/main/Mono/Exports/DMMono-Medium.ttf",
+      src: path.join(FONTS_DIR, "DMMono-Medium.ttf"),
       fontWeight: 500,
     },
   ],
