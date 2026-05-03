@@ -31,11 +31,13 @@ export function OnboardingStep2({ error }: { error?: string }) {
         action={handleSubmit}
         className="rounded-[12px] border border-border-subtle bg-bg-card p-7 shadow-card"
       >
-        <p className="text-[11px] font-medium tracking-[0.05em] text-text-tertiary uppercase">
-          About the business
-        </p>
-
-        <div className="mt-3 flex flex-col gap-3">
+        <div className="flex flex-col gap-3">
+          <Field
+            id="contact_name"
+            label="Contact name"
+            placeholder="Peter Smith"
+            autoComplete="name"
+          />
           <Field
             id="business_name"
             label="Business name"
@@ -49,22 +51,9 @@ export function OnboardingStep2({ error }: { error?: string }) {
             placeholder="precisionauto.com"
             autoComplete="off"
           />
-        </div>
-
-        <p className="mt-5 text-[11px] font-medium tracking-[0.05em] text-text-tertiary uppercase">
-          About the client
-        </p>
-
-        <div className="mt-3 flex flex-col gap-3">
-          <Field
-            id="contact_name"
-            label="Full name"
-            placeholder="Peter Smith"
-            autoComplete="name"
-          />
           <Field
             id="contact_email"
-            label="Email address"
+            label="Contact email"
             type="email"
             placeholder="peter@theirbusiness.com"
             autoComplete="email"

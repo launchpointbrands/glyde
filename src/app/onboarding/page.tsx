@@ -145,8 +145,8 @@ function Step2({ error }: { error?: string }) {
           Add your first client
         </h1>
         <p className="mt-3 text-body text-text-secondary">
-          Enter a business owner client you work with. We&apos;ll generate
-          their valuation and risk profile automatically.
+          Enter a business owner client you work with. A sample client has
+          already been added to your account.
         </p>
       </div>
 
