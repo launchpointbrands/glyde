@@ -66,22 +66,14 @@ export default function ProcessingPage() {
         className="h-9 w-auto"
       />
 
-      {/* Icon — outer wrapper rotates, inner pulses, so the two
-          animations compose cleanly via two stacked transforms. */}
-      <div className="animate-[glyde-spin_3s_linear_infinite]">
-        <div className="animate-[glyde-pulse_2s_ease-in-out_infinite]">
-          <Image
-            src="/brand/glyde-icon.svg"
-            alt=""
-            width={72}
-            height={72}
-            unoptimized
-            priority
-            aria-hidden
-            className="h-[72px] w-[72px]"
-          />
-        </div>
-      </div>
+      {/* Standard CSS border-trick spinner — 48px ring, 3px stroke,
+          green-400 arc covering ~25% of the circumference, 1s linear
+          rotation via Tailwind's built-in animate-spin. */}
+      <div
+        role="status"
+        aria-label="Loading"
+        className="h-12 w-12 animate-spin rounded-full border-[3px] border-border-default border-t-green-400"
+      />
 
       {/* Status messages — crossfade by keeping all 6 in place and only
           rendering the active one. */}
@@ -104,14 +96,6 @@ export default function ProcessingPage() {
       </div>
 
       <style jsx global>{`
-        @keyframes glyde-spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes glyde-pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-        }
         @keyframes glyde-fadein {
           from { opacity: 0; }
           to { opacity: 1; }
