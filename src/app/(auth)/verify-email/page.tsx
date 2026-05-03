@@ -18,9 +18,9 @@ export default async function VerifyEmailPage({
             Check your email
           </h1>
           <p className="mt-1.5 text-meta text-text-tertiary">
-            We sent a 6-digit code to{" "}
-            <span className="text-text-primary">{email}</span>. Enter it
-            below to verify your account.
+            We sent a verification code to{" "}
+            <span className="text-text-primary">{email}</span>. Copy it
+            from your email and paste it below.
           </p>
         </div>
 

@@ -1,115 +1,29 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import {
-  useEffect,
-  useRef,
-  useState,
-  useTransition,
-  type ClipboardEvent,
-  type KeyboardEvent,
-} from "react";
+import { useState, useTransition, type FormEvent } from "react";
 import { resendVerifyOtp, verifyEmailOtp } from "@/lib/auth";
-
-const LENGTH = 6;
-
-const EMPTY = Array.from({ length: LENGTH }, () => "");
 
 export function VerifyEmailForm({ email }: { email: string }) {
   const router = useRouter();
-  const [digits, setDigits] = useState<string[]>(EMPTY);
+  const [token, setToken] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [resendOk, setResendOk] = useState(false);
   const [pending, startTransition] = useTransition();
   const [resendPending, startResend] = useTransition();
 
-  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
-  const lastSubmitted = useRef<string | null>(null);
-
-  const code = digits.join("");
-  const ready = code.length === LENGTH && digits.every((d) => d);
-
-  function setDigit(i: number, value: string) {
-    setDigits((prev) => {
-      const next = [...prev];
-      next[i] = value;
-      return next;
-    });
-  }
-
-  function focusBox(i: number) {
-    const target = inputRefs.current[i];
-    if (target) {
-      target.focus();
-      target.select();
-    }
-  }
-
-  function handleChange(i: number, raw: string) {
-    const cleaned = raw.replace(/\D/g, "").slice(0, 1);
-    setDigit(i, cleaned);
-    if (error) setError(null);
-    if (cleaned && i < LENGTH - 1) {
-      focusBox(i + 1);
-    }
-  }
-
-  function handleKeyDown(i: number, e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Backspace") {
-      if (digits[i]) {
-        setDigit(i, "");
-        return;
-      }
-      if (i > 0) {
-        focusBox(i - 1);
-        setDigit(i - 1, "");
-      }
-    } else if (e.key === "ArrowLeft" && i > 0) {
-      focusBox(i - 1);
-    } else if (e.key === "ArrowRight" && i < LENGTH - 1) {
-      focusBox(i + 1);
-    }
-  }
-
-  function handlePaste(e: ClipboardEvent<HTMLInputElement>) {
-    const text = e.clipboardData
-      .getData("text")
-      .replace(/\D/g, "")
-      .slice(0, LENGTH);
-    if (text.length === 0) return;
+  function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const next = [...EMPTY];
-    for (let i = 0; i < text.length; i++) next[i] = text[i];
-    setDigits(next);
-    if (error) setError(null);
-    const focusIndex = Math.min(text.length, LENGTH - 1);
-    focusBox(focusIndex);
-  }
-
-  function submit(token: string) {
-    if (lastSubmitted.current === token) return;
-    lastSubmitted.current = token;
+    const trimmed = token.trim();
+    if (!trimmed) return;
     startTransition(async () => {
-      const result = await verifyEmailOtp(email, token);
+      const result = await verifyEmailOtp(email, trimmed);
       if (result.error) {
         setError("That code didn't work. Please try again.");
         return;
       }
       router.push("/onboarding");
     });
-  }
-
-  // Auto-submit when all 6 boxes are filled.
-  useEffect(() => {
-    if (!ready) return;
-    submit(code);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, code]);
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!ready) return;
-    submit(code);
   }
 
   function handleResend() {
@@ -128,34 +42,25 @@ export function VerifyEmailForm({ email }: { email: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <div
-        className="flex justify-center gap-2"
-        onPaste={handlePaste}
-      >
-        {digits.map((d, i) => (
-          <input
-            key={i}
-            ref={(el) => {
-              inputRefs.current[i] = el;
-            }}
-            type="text"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            aria-label={`Digit ${i + 1} of ${LENGTH}`}
-            maxLength={1}
-            value={d}
-            onChange={(e) => handleChange(i, e.target.value)}
-            onKeyDown={(e) => handleKeyDown(i, e)}
-            onPaste={handlePaste}
-            onFocus={(e) => e.currentTarget.select()}
-            className={[
-              "h-[52px] w-[44px] rounded-md border text-center text-[22px] font-mono tabular-nums text-text-primary transition-colors focus:border-green-400 focus:outline-none focus:ring-[3px] focus:ring-green-50",
-              d
-                ? "border-green-400 bg-green-50"
-                : "border-border-default bg-bg-input",
-            ].join(" ")}
-          />
-        ))}
+      <div className="space-y-2">
+        <label
+          htmlFor="verify-token"
+          className="text-meta font-medium text-text-primary"
+        >
+          Verification code
+        </label>
+        <input
+          id="verify-token"
+          type="text"
+          autoFocus
+          autoComplete="one-time-code"
+          value={token}
+          onChange={(e) => {
+            setToken(e.target.value);
+            if (error) setError(null);
+          }}
+          className="w-full rounded-md border border-border-default bg-bg-input p-3 text-center text-[18px] font-mono tracking-[0.08em] text-text-primary placeholder:text-text-tertiary transition-shadow focus:border-green-400 focus:outline-none focus:ring-[3px] focus:ring-green-50"
+        />
       </div>
 
       {error && (
@@ -170,7 +75,7 @@ export function VerifyEmailForm({ email }: { email: string }) {
 
       <button
         type="submit"
-        disabled={!ready || pending}
+        disabled={!token.trim() || pending}
         className="w-full rounded-md bg-green-400 px-3 py-2.5 text-meta font-medium text-text-inverse transition-colors hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {pending ? "Verifying…" : "Verify email →"}
