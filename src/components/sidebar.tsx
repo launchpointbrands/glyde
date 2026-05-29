@@ -1,8 +1,8 @@
 import { Users } from "lucide-react";
-import Image from "next/image";
 import { signOut } from "@/lib/auth";
 import { InviteButton } from "@/components/invite-button";
 import { SidebarLink } from "@/components/sidebar-link";
+import { Wordmark } from "@/components/wordmark";
 import { createClient } from "@/lib/supabase/server";
 
 // Notion / Linear-style hover-to-expand rail. Fixed-position, overlays
@@ -34,23 +34,12 @@ export async function Sidebar() {
     <aside className="group/sidebar fixed inset-y-0 left-0 z-30 hidden w-14 flex-col overflow-hidden border-r border-border-subtle bg-bg-sidebar transition-[width] duration-150 ease-out hover:w-[220px] md:flex">
       {/* Brand: icon (collapsed) crossfades to wordmark (expanded). */}
       <div className="relative flex h-12 items-center px-3 pt-6 pb-5">
-        <Image
-          src="/brand/glyde-icon.svg"
-          alt="Glyde"
-          width={32}
-          height={32}
-          unoptimized
-          priority
-          className="h-8 w-8 transition-opacity duration-150 group-hover/sidebar:opacity-0"
+        <Wordmark
+          variant="icon"
+          className="flex h-8 w-8 items-center justify-center text-[22px] text-text-primary transition-opacity duration-150 group-hover/sidebar:opacity-0"
         />
-        <Image
-          src="/brand/glyde-wordmark.svg"
-          alt="Glyde"
-          width={170}
-          height={32}
-          unoptimized
-          priority
-          className="absolute top-1/2 left-3 h-8 w-auto -translate-y-1/2 opacity-0 transition-opacity duration-150 group-hover/sidebar:opacity-100"
+        <Wordmark
+          className="absolute top-1/2 left-3 -translate-y-1/2 text-[20px] text-text-primary opacity-0 transition-opacity duration-150 group-hover/sidebar:opacity-100"
         />
       </div>
 

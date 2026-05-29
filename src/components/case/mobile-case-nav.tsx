@@ -9,10 +9,10 @@ import {
   TrendingUp,
   X,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { Wordmark } from "@/components/wordmark";
 
 // Mobile-only chrome for the case detail surface. Top bar (52px, fixed)
 // + slide-in panel from the right replace the sidebar and the
@@ -42,14 +42,7 @@ export function MobileCaseNav({ caseId }: { caseId: string }) {
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-40 flex h-[52px] items-center justify-between border-b border-border-subtle bg-bg-card px-4 md:hidden">
-        <Image
-          src="/brand/glyde-icon.svg"
-          alt="Glyde"
-          width={28}
-          height={28}
-          unoptimized
-          priority
-        />
+        <Wordmark variant="icon" className="text-[20px] text-text-primary" />
         <p className="text-body font-medium text-text-primary">{active.label}</p>
         <button
           type="button"

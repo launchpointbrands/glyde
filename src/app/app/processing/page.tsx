@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Wordmark } from "@/components/wordmark";
 
 const MESSAGES = [
   "Analyzing discovery responses...",
@@ -56,15 +56,7 @@ export default function ProcessingPage() {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-10 bg-bg-page px-6">
-      <Image
-        src="/brand/glyde-wordmark.svg"
-        alt="Glyde"
-        width={180}
-        height={36}
-        unoptimized
-        priority
-        className="h-9 w-auto"
-      />
+      <Wordmark className="text-[28px] text-text-primary" />
 
       {/* Standard CSS border-trick spinner — 48px ring, 3px stroke,
           green-400 arc covering ~25% of the circumference, 1s linear
@@ -79,7 +71,7 @@ export default function ProcessingPage() {
           rendering the active one. */}
       <p
         key={messageIndex}
-        className="animate-[glyde-fadein_300ms_ease-out] text-meta text-text-secondary"
+        className="animate-[corarc-fadein_300ms_ease-out] text-meta text-text-secondary"
       >
         {MESSAGES[messageIndex]}
       </p>
@@ -96,7 +88,7 @@ export default function ProcessingPage() {
       </div>
 
       <style jsx global>{`
-        @keyframes glyde-fadein {
+        @keyframes corarc-fadein {
           from { opacity: 0; }
           to { opacity: 1; }
         }

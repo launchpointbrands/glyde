@@ -55,9 +55,9 @@ export function PlaceholderDocument({
             Full {reportTitle.toLowerCase()} export is in progress.
           </Text>
           <Text style={[styles.body, { marginTop: 8 }]}>
-            The web dashboard at glyde-alpha.vercel.app shows the live
-            version of this report. The fully formatted PDF export is being
-            built and will be available shortly.
+            The web dashboard shows the live version of this report. The
+            fully formatted PDF export is being built and will be available
+            shortly.
           </Text>
         </View>
       </Page>

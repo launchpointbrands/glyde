@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { Wordmark } from "@/components/wordmark";
 
 // Split-screen wrapper for /login and /signup. Dark editorial left panel
 // (background image + headline) sets the tone; the form sits on white in
@@ -23,15 +23,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
         />
         <div aria-hidden className="absolute inset-0 -z-10 bg-black/20" />
 
-        <Image
-          src="/brand/glydepath-white.svg"
-          alt="GlydePath"
-          width={180}
-          height={34}
-          unoptimized
-          priority
-          className="h-[34px] w-auto"
-        />
+        <Wordmark className="text-[26px] text-white" />
 
         <div className="max-w-md">
           <h1 className="text-stat font-medium leading-[1.25] text-white">
@@ -39,7 +31,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
             for.
           </h1>
           <p className="mt-5 text-body text-white/70">
-            Glyde helps wealth advisors go deeper with their business owner
+            CorArc helps wealth advisors go deeper with their business owner
             clients — with the language, structure, and tools to unlock
             conversations that matter.
           </p>
@@ -56,15 +48,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           background. */}
       <div className="flex flex-1 items-center justify-center bg-bg-card px-6 py-12">
         <div className="w-full max-w-[360px]">
-          <Image
-            src="/brand/glyde-wordmark.svg"
-            alt="Glyde"
-            width={140}
-            height={28}
-            unoptimized
-            priority
-            className="mb-8 h-7 w-auto lg:hidden"
-          />
+          <Wordmark className="mb-8 block text-[22px] text-text-primary lg:hidden" />
           {children}
         </div>
       </div>

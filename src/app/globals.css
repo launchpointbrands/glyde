@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Glyde design tokens — DESIGN.md is the source of truth.
+/* CorArc design tokens — DESIGN.md is the source of truth.
    Declared in @theme so each emits as a :root CSS variable AND drives a
    Tailwind utility (bg-bg-page, text-text-primary, border-border-subtle,
    text-eyebrow, etc.). Components reference these by name everywhere —

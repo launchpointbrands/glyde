@@ -1,8 +1,8 @@
-# Glyde — Design System
+# CorArc — Design System
 
 ## Product context
 
-Glyde is a private advisor workspace for wealth advisors working with business owner clients. The advisor uses it alone — before meetings, between sessions, to prepare. There is no client-facing surface. The product should feel calm, focused, and trustworthy — like a well-designed private banking tool that an advisor is proud to have open on their screen.
+CorArc is a private advisor workspace for wealth advisors working with business owner clients. The advisor uses it alone — before meetings, between sessions, to prepare. There is no client-facing surface. The product should feel calm, focused, and trustworthy — like a well-designed private banking tool that an advisor is proud to have open on their screen.
 
 ---
 

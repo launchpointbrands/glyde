@@ -99,7 +99,7 @@ export function InviteButton() {
             {view.kind === "form" ? (
               <>
                 <p className="mt-1.5 text-[13px] text-text-secondary">
-                  Send them a branded invitation to create their Glyde account.
+                  Send them a branded invitation to create their CorArc account.
                 </p>
 
                 <form onSubmit={onSubmit} className="mt-5">

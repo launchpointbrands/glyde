@@ -381,6 +381,6 @@ export async function renderReport(
   const safeName = businessName
     .replace(/[^a-zA-Z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "");
-  const filename = `Glyde_${REPORT_TITLES[type].replace(/\s+/g, "_")}_${safeName}_${date}.pdf`;
+  const filename = `CorArc_${REPORT_TITLES[type].replace(/\s+/g, "_")}_${safeName}_${date}.pdf`;
   return { buffer, filename, businessName };
 }

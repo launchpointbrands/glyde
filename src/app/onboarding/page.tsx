@@ -1,5 +1,5 @@
-import Image from "next/image";
 import { OnboardingStep2 } from "@/components/onboarding-step-2";
+import { Wordmark } from "@/components/wordmark";
 import { saveAdvisorProfile } from "@/lib/onboarding";
 import { createClient } from "@/lib/supabase/server";
 
@@ -33,15 +33,7 @@ export default async function OnboardingPage({
   return (
     <main className="flex min-h-screen flex-col bg-bg-page">
       <header className="flex items-center justify-between px-10 py-7">
-        <Image
-          src="/brand/glyde-wordmark.svg"
-          alt="Glyde"
-          width={140}
-          height={28}
-          unoptimized
-          priority
-          className="h-7 w-auto"
-        />
+        <Wordmark className="text-[22px] text-text-primary" />
         <p className="text-eyebrow uppercase text-text-tertiary">
           Step {step} of 2
         </p>

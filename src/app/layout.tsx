@@ -17,7 +17,7 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Glyde",
+  title: "CorArc",
   description: "Glide-path conversation tool for wealth advisors",
 };
 
