@@ -4,6 +4,7 @@ import { Info } from "lucide-react";
 import { useState, useTransition } from "react";
 import { markSkipped, saveResponse } from "@/lib/discovery";
 import { ChoiceCard } from "./choice-card";
+import { NaicsCombobox } from "./naics-combobox";
 
 type Field = {
   key: string;
@@ -43,7 +44,10 @@ export function WalkthroughQuestion({
   const [draft, setDraft] = useState(initial);
   const [lastServer, setLastServer] = useState(initial);
 
-  if (lastServer !== initial) {
+  // Adopt the server-confirmed value only when no save is in flight, so an
+  // earlier save's revalidate can't clobber a selection the advisor just
+  // made (which would read as a flicker).
+  if (!pending && lastServer !== initial) {
     setLastServer(initial);
     setDraft(initial);
   }
@@ -57,6 +61,15 @@ export function WalkthroughQuestion({
         console.error("saveResponse failed", e),
       );
     });
+  }
+
+  // Optimistic select for tap-to-choose inputs: paint the selection
+  // immediately via local `draft`, then persist in the background. Without
+  // this the highlight waits on the save + risk re-eval + revalidate round
+  // trip, which reads as a laggy click.
+  function selectValue(value: string) {
+    setDraft(value);
+    commit(value);
   }
 
   function skip() {
@@ -103,15 +116,24 @@ export function WalkthroughQuestion({
             <ChoiceCard
               key={c.value}
               label={c.label}
-              selected={currentValue === c.value}
-              disabled={pending}
-              onSelect={() => commit(c.value)}
+              selected={draft === c.value}
+              onSelect={() => selectValue(c.value)}
             />
           ))}
         </div>
       )}
 
-      {field.input_type === "text" && (
+      {/* NAICS is a free-text field in the schema but gets a searchable
+          picker so advisors don't have to know the 6-digit code by heart. */}
+      {field.input_type === "text" && field.key === "industry_naics" && (
+        <NaicsCombobox
+          value={draft || null}
+          onSelect={selectValue}
+          disabled={pending}
+        />
+      )}
+
+      {field.input_type === "text" && field.key !== "industry_naics" && (
         <input
           type="text"
           value={draft}
