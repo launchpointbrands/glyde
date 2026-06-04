@@ -2,11 +2,7 @@
 
 import { Info } from "lucide-react";
 import { useState, useTransition } from "react";
-import {
-  markSkipped,
-  markUnknown,
-  saveResponse,
-} from "@/lib/discovery";
+import { markSkipped, saveResponse } from "@/lib/discovery";
 import { ChoiceCard } from "./choice-card";
 
 type Field = {
@@ -67,14 +63,6 @@ export function WalkthroughQuestion({
     startTransition(() => {
       markSkipped(caseId, field.key).catch((e) =>
         console.error("markSkipped failed", e),
-      );
-    });
-  }
-
-  function unknown() {
-    startTransition(() => {
-      markUnknown(caseId, field.key).catch((e) =>
-        console.error("markUnknown failed", e),
       );
     });
   }
@@ -179,21 +167,6 @@ export function WalkthroughQuestion({
           ].join(" ")}
         >
           {response?.status === "skipped" ? "Skipped" : "Skip for now"}
-        </button>
-        <button
-          type="button"
-          onClick={unknown}
-          disabled={pending}
-          className={[
-            "underline-offset-4 transition-colors hover:underline",
-            response?.status === "unknown"
-              ? "text-danger-fg"
-              : "text-text-tertiary hover:text-text-primary",
-          ].join(" ")}
-        >
-          {response?.status === "unknown"
-            ? "Flagged for follow-up"
-            : "I don't know yet"}
         </button>
       </div>
     </div>

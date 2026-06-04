@@ -108,10 +108,9 @@ export default async function WalkthroughPage({
     ? `/app/processing?caseId=${caseId}`
     : `/app/cases/${caseId}/discovery/walkthrough?q=${step.number + 1}`;
 
-  // Whether the advisor has answered (vs. skipped / not yet touched). Used
-  // only to label the primary button — Next is always available so they can
-  // move forward, or skip for later, on any question.
-  const isAnswered = typedResponse?.status === "answered";
+  // Next is enabled once the question has a response row — either an answer
+  // or an explicit "Skip for now". Until then the primary button stays grey.
+  const canAdvance = Boolean(typedResponse);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-bg-page">
@@ -166,12 +165,23 @@ export default async function WalkthroughPage({
               >
                 ← Back
               </Link>
-              <Link
-                href={nextHref}
-                className="rounded-md bg-green-400 px-5 py-2 text-meta font-medium text-text-inverse transition-colors hover:bg-green-600"
-              >
-                {isLast ? "Complete →" : isAnswered ? "Next →" : "Skip for now →"}
-              </Link>
+              {canAdvance ? (
+                <Link
+                  href={nextHref}
+                  className="rounded-md bg-green-400 px-5 py-2 text-meta font-medium text-text-inverse transition-colors hover:bg-green-600"
+                >
+                  {isLast ? "Complete →" : "Next →"}
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  title="Answer or skip this question to continue"
+                  className="cursor-not-allowed rounded-md bg-green-400 px-5 py-2 text-meta font-medium text-text-inverse opacity-40"
+                >
+                  {isLast ? "Complete →" : "Next →"}
+                </button>
+              )}
             </div>
           </div>
         </div>
