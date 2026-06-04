@@ -4,7 +4,7 @@ import {
   Text,
   View,
 } from "@react-pdf/renderer";
-import { PdfCover } from "./pdf-cover";
+import { PdfCover, type ReportBranding } from "./pdf-cover";
 import { PdfFooter } from "./pdf-footer";
 import { PdfHeader } from "./pdf-header";
 import { C, styles } from "./pdf-tokens";
@@ -50,6 +50,8 @@ export type ValuationReportData = {
   advisorName: string;
   advisorTitle: string;
   preparedAt: string;
+  branding: ReportBranding;
+  reportDescription: string;
   ownershipPct: number;
   isDemo: boolean;
   snap: {
@@ -79,6 +81,8 @@ export function ValuationDocument(props: ValuationReportData) {
     <Document>
       <PdfCover
         reportTitle="Business Valuation Report"
+        description={props.reportDescription}
+        branding={props.branding}
         contactName={contactName}
         businessName={businessName}
         advisorName={props.advisorName}

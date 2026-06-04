@@ -17,6 +17,7 @@ import {
   WealthDocument,
   type WealthReportData,
 } from "@/components/pdf/pdf-wealth";
+import type { ReportBranding } from "@/components/pdf/pdf-cover";
 import { ensureFinancials } from "@/lib/financials";
 import { evaluateRiskFactors } from "@/lib/risk";
 import { createClient } from "@/lib/supabase/server";
@@ -28,6 +29,20 @@ const REPORT_TITLES: Record<ReportType, string> = {
   risk: "Business Risk Assessment",
   wealth: "Business Wealth Blueprint",
   succession: "Succession Plan",
+};
+
+// Standard, client-agnostic description of what each report is and is for.
+// Rendered on the cover. Client-facing voice (the business owner reads it),
+// delivered under the firm's brand — not the WMGR/product voice.
+const REPORT_DESCRIPTIONS: Record<ReportType, string> = {
+  valuation:
+    "This report estimates a value range for your business based on its financial profile and industry comparables. It's a directional baseline to inform planning — not a formal appraisal — meant to show what your business may be worth today and the key factors driving that figure.",
+  risk:
+    "This report reviews the factors that affect your business's value and marketability — including customer concentration, dependence on the owner and key people, and the strength of your agreements. It highlights where risk could discount your value at exit, and where there's room to strengthen the business beforehand.",
+  wealth:
+    "This report connects your business to your broader financial goals — what it needs to be worth, and by when, to fund the life you want after exit. It frames the valuation, earnings, and timeline targets that turn the value in your business into lasting personal wealth.",
+  succession:
+    "This report outlines the path to transitioning your business and how prepared you are for it today. It covers your priorities, the transition options available to you, and a readiness score across the personal and business steps that make for a smooth, well-timed exit.",
 };
 
 function todayLong(): string {
@@ -51,7 +66,7 @@ async function loadCommonContext(caseId: string) {
     supabase
       .from("cases")
       .select(
-        "id, label, ownership_pct, client_business:client_businesses(business_name, contact_name, primary_owner_name)",
+        "id, label, ownership_pct, firm_id, client_business:client_businesses(business_name, contact_name, primary_owner_name)",
       )
       .eq("id", caseId)
       .maybeSingle(),
@@ -63,6 +78,26 @@ async function loadCommonContext(caseId: string) {
   ]);
 
   if (!caseRow) throw new Error("Case not found.");
+
+  // Resolve report branding. Phase 1: the entity (firm). Phase 2 will prefer
+  // the advisor's subentity when one is assigned — this is the single place
+  // that needs to change for that.
+  const { data: firm } = await supabase
+    .from("firms")
+    .select(
+      "name, logo_url, primary_color, disclosure_text, contact_email, contact_phone",
+    )
+    .eq("id", caseRow.firm_id)
+    .maybeSingle();
+
+  const branding: ReportBranding = {
+    name: (firm?.name as string | null) ?? "",
+    logoUrl: (firm?.logo_url as string | null) ?? null,
+    primaryColor: (firm?.primary_color as string | null) ?? null,
+    disclosure: (firm?.disclosure_text as string | null) ?? null,
+    contactEmail: (firm?.contact_email as string | null) ?? null,
+    contactPhone: (firm?.contact_phone as string | null) ?? null,
+  };
 
   const cb = Array.isArray(caseRow.client_business)
     ? caseRow.client_business[0]
@@ -90,6 +125,7 @@ async function loadCommonContext(caseId: string) {
     ownershipPct,
     isDemo,
     caseId,
+    branding,
   };
 }
 
@@ -152,6 +188,8 @@ async function loadValuationData(
     advisorName: ctx.advisorName,
     advisorTitle: ctx.advisorTitle,
     preparedAt: todayLong(),
+    branding: ctx.branding,
+    reportDescription: REPORT_DESCRIPTIONS.valuation,
     ownershipPct: ctx.ownershipPct,
     isDemo: ctx.isDemo,
     snap: (snap ?? {
@@ -210,6 +248,8 @@ async function loadRiskData(caseId: string): Promise<RiskReportData> {
     advisorName: ctx.advisorName,
     advisorTitle: ctx.advisorTitle,
     preparedAt: todayLong(),
+    branding: ctx.branding,
+    reportDescription: REPORT_DESCRIPTIONS.risk,
     overallRisk: (assessment?.overall_risk as string | null) ?? "moderate",
     riskImpactLow: (snap?.risk_impact_pct_low as number | null) ?? 3,
     riskImpactHigh: (snap?.risk_impact_pct_high as number | null) ?? 6,
@@ -257,6 +297,8 @@ async function loadWealthData(caseId: string): Promise<WealthReportData> {
     advisorName: ctx.advisorName,
     advisorTitle: ctx.advisorTitle,
     preparedAt: todayLong(),
+    branding: ctx.branding,
+    reportDescription: REPORT_DESCRIPTIONS.wealth,
     netProceedsTarget: (plan?.net_proceeds_target as number | null) ?? null,
     goalValuation: (plan?.goal_valuation as number | null) ?? null,
     goalEbitda: (plan?.goal_ebitda as number | null) ?? null,
@@ -341,6 +383,8 @@ async function loadSuccessionData(
     advisorName: ctx.advisorName,
     advisorTitle: ctx.advisorTitle,
     preparedAt: todayLong(),
+    branding: ctx.branding,
+    reportDescription: REPORT_DESCRIPTIONS.succession,
     selectedPath: (plan?.selected_path as string | null) ?? null,
     priorities: (plan?.priorities ?? []) as string[],
     personalScore,

@@ -1,5 +1,5 @@
 import { Document, Page, Text, View } from "@react-pdf/renderer";
-import { PdfCover } from "./pdf-cover";
+import { PdfCover, type ReportBranding } from "./pdf-cover";
 import { PdfFooter } from "./pdf-footer";
 import { PdfHeader } from "./pdf-header";
 import { C, styles } from "./pdf-tokens";
@@ -10,6 +10,8 @@ import { C, styles } from "./pdf-tokens";
 
 export function PlaceholderDocument({
   reportTitle,
+  description,
+  branding,
   contactName,
   businessName,
   advisorName,
@@ -18,6 +20,8 @@ export function PlaceholderDocument({
   reportType,
 }: {
   reportTitle: string;
+  description: string;
+  branding: ReportBranding;
   contactName: string;
   businessName: string;
   advisorName: string;
@@ -29,6 +33,8 @@ export function PlaceholderDocument({
     <Document>
       <PdfCover
         reportTitle={reportTitle}
+        description={description}
+        branding={branding}
         contactName={contactName}
         businessName={businessName}
         advisorName={advisorName}

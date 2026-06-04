@@ -1,5 +1,5 @@
 import { Document, Page, Text, View } from "@react-pdf/renderer";
-import { PdfCover } from "./pdf-cover";
+import { PdfCover, type ReportBranding } from "./pdf-cover";
 import { PdfFooter } from "./pdf-footer";
 import { PdfHeader } from "./pdf-header";
 import { C, styles } from "./pdf-tokens";
@@ -40,6 +40,8 @@ export type RiskReportData = {
   advisorName: string;
   advisorTitle: string;
   preparedAt: string;
+  branding: ReportBranding;
+  reportDescription: string;
   overallRisk: string;
   riskImpactLow: number | null;
   riskImpactHigh: number | null;
@@ -64,6 +66,8 @@ export function RiskDocument(props: RiskReportData) {
     <Document>
       <PdfCover
         reportTitle="Business Risk Assessment"
+        description={props.reportDescription}
+        branding={props.branding}
         contactName={contactName}
         businessName={businessName}
         advisorName={props.advisorName}

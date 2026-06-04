@@ -25,7 +25,7 @@ export function PdfFooter({
       }}
     >
       <Text style={{ fontSize: 8, color: C.textTertiary, flex: 1 }}>
-        WMGR · Confidential
+        Powered by WMGR · Confidential
       </Text>
       <Text
         style={{

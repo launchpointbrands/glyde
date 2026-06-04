@@ -1,5 +1,5 @@
 import { Document, Page, Text, View } from "@react-pdf/renderer";
-import { PdfCover } from "./pdf-cover";
+import { PdfCover, type ReportBranding } from "./pdf-cover";
 import { PdfFooter } from "./pdf-footer";
 import { PdfHeader } from "./pdf-header";
 import { C, styles } from "./pdf-tokens";
@@ -26,6 +26,8 @@ export type WealthReportData = {
   advisorName: string;
   advisorTitle: string;
   preparedAt: string;
+  branding: ReportBranding;
+  reportDescription: string;
   netProceedsTarget: number | null;
   goalValuation: number | null;
   goalEbitda: number | null;
@@ -73,6 +75,8 @@ export function WealthDocument(props: WealthReportData) {
     <Document>
       <PdfCover
         reportTitle="Business Wealth Blueprint"
+        description={props.reportDescription}
+        branding={props.branding}
         contactName={contactName}
         businessName={businessName}
         advisorName={props.advisorName}
