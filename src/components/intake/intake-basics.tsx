@@ -44,7 +44,7 @@ export function IntakeBasics({ error }: { error?: string }) {
             (just hidden) so its field values survive into the final submit. */}
         <form action={createCase} className="w-full max-w-[560px]">
           {/* Screen 1 — about the client */}
-          <fieldset hidden={step !== 0} className="animate-[corarc-fadein_300ms_ease-out]">
+          <fieldset hidden={step !== 0} className="animate-[wmgr-fadein_300ms_ease-out]">
             <Eyebrow>Step 1 of 2 · About the client</Eyebrow>
             <h1 className="mt-2 text-[30px] font-semibold leading-tight text-text-primary md:text-[34px]">
               Who are you adding?
@@ -75,7 +75,7 @@ export function IntakeBasics({ error }: { error?: string }) {
           </fieldset>
 
           {/* Screen 2 — about the business */}
-          <fieldset hidden={step !== 1} className="animate-[corarc-fadein_300ms_ease-out]">
+          <fieldset hidden={step !== 1} className="animate-[wmgr-fadein_300ms_ease-out]">
             <Eyebrow>Step 2 of 2 · About the business</Eyebrow>
             <h1 className="mt-2 text-[30px] font-semibold leading-tight text-text-primary md:text-[34px]">
               Tell us about their business

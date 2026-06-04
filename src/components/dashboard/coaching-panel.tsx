@@ -54,7 +54,7 @@ export function CoachingPanel({
           className="h-3.5 w-3.5 text-green-400 transition-transform duration-200 ease-out group-hover/ask:rotate-[20deg] group-hover/ask:scale-125"
           aria-hidden
         />
-        Ask CorArc →
+        Ask WMGR →
       </button>
     );
   }

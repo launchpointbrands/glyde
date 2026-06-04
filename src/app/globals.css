@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* CorArc design tokens — DESIGN.md is the source of truth.
+/* WMGR design tokens — DESIGN.md is the source of truth.
    Declared in @theme so each emits as a :root CSS variable AND drives a
    Tailwind utility (bg-bg-page, text-text-primary, border-border-subtle,
    text-eyebrow, etc.). Components reference these by name everywhere —
@@ -26,14 +26,17 @@
   --color-text-tertiary:  #7A9A7A;
   --color-text-inverse:   #FFFFFF;
 
-  /* Brand green */
-  --color-green-50:  #F0F7F0;
-  --color-green-100: #D4EDD4;
-  --color-green-200: #A8D8A8;
-  --color-green-400: #5CA85C;
-  --color-green-600: #3D7A3D;
-  --color-green-800: #1F4A1F;
-  --color-green-900: #0D2A0D;
+  /* Brand green — scale built around the WMGR primary #395E38.
+     green-400 is the primary action color (buttons, links, accents);
+     -600 is its hover/darker step; 50/100/200 are light tints used for
+     selected/hover surfaces; 800/900 are dark text on those tints. */
+  --color-green-50:  #EEF4EE;
+  --color-green-100: #D8E4D7;
+  --color-green-200: #A9C3A8;
+  --color-green-400: #395E38;
+  --color-green-600: #2C4A2B;
+  --color-green-800: #1C311C;
+  --color-green-900: #10200F;
 
   /* Severity — DESIGN.md uses *-text; -fg utility aliases live below. */
   --color-danger-bg:      #FEF2F2;
@@ -164,8 +167,8 @@
 
 /* Shared fade-in used by full-screen flows (processing, intake,
    discovery walkthrough). Defined globally so any component can use
-   `animate-[corarc-fadein_300ms_ease-out]`. */
-@keyframes corarc-fadein {
+   `animate-[wmgr-fadein_300ms_ease-out]`. */
+@keyframes wmgr-fadein {
   from {
     opacity: 0;
   }

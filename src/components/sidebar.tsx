@@ -36,10 +36,10 @@ export async function Sidebar() {
       <div className="relative flex h-12 items-center px-3 pt-6 pb-5">
         <Wordmark
           variant="icon"
-          className="flex h-8 w-8 items-center justify-center text-[22px] text-text-primary transition-opacity duration-150 group-hover/sidebar:opacity-0"
+          className="text-[26px] transition-opacity duration-150 group-hover/sidebar:opacity-0"
         />
         <Wordmark
-          className="absolute top-1/2 left-3 -translate-y-1/2 text-[20px] text-text-primary opacity-0 transition-opacity duration-150 group-hover/sidebar:opacity-100"
+          className="absolute top-1/2 left-3 -translate-y-1/2 text-[20px] opacity-0 transition-opacity duration-150 group-hover/sidebar:opacity-100"
         />
       </div>
 

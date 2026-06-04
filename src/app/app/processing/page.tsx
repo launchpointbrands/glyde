@@ -71,7 +71,7 @@ export default function ProcessingPage() {
           rendering the active one. */}
       <p
         key={messageIndex}
-        className="animate-[corarc-fadein_300ms_ease-out] text-meta text-text-secondary"
+        className="animate-[wmgr-fadein_300ms_ease-out] text-meta text-text-secondary"
       >
         {MESSAGES[messageIndex]}
       </p>
@@ -88,7 +88,7 @@ export default function ProcessingPage() {
       </div>
 
       <style jsx global>{`
-        @keyframes corarc-fadein {
+        @keyframes wmgr-fadein {
           from { opacity: 0; }
           to { opacity: 1; }
         }

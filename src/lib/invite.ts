@@ -25,9 +25,9 @@ export async function sendInvitation(email: string): Promise<InviteResult> {
   try {
     const resend = new Resend(apiKey);
     const { error } = await resend.emails.send({
-      from: "CorArc <info@meetings.launchpointbrands.com>",
+      from: "WMGR <info@meetings.launchpointbrands.com>",
       to: trimmed,
-      subject: "You're invited to CorArc",
+      subject: "You're invited to WMGR",
       html: INVITE_HTML,
     });
     if (error) return { error: error.message ?? "Could not send invitation." };
@@ -43,7 +43,7 @@ const INVITE_HTML = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>You're invited to CorArc</title>
+  <title>You're invited to WMGR</title>
 </head>
 <body style="margin:0;padding:0;background-color:#F4F6F4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F4F6F4;padding:40px 20px;">
@@ -53,8 +53,8 @@ const INVITE_HTML = `<!DOCTYPE html>
 
           <!-- Logo header — dark green panel -->
           <tr>
-            <td style="background-color:#0D2A0D;border-radius:12px 12px 0 0;padding:24px 40px;">
-              <p style="margin:0;font-size:24px;font-weight:600;letter-spacing:-0.02em;color:#ffffff;">CorArc</p>
+            <td style="background-color:#395E38;border-radius:12px 12px 0 0;padding:24px 40px;">
+              <p style="margin:0;font-size:24px;font-weight:600;letter-spacing:-0.02em;color:#ffffff;">WMGR</p>
             </td>
           </tr>
 
@@ -66,7 +66,7 @@ const INVITE_HTML = `<!DOCTYPE html>
               <p style="margin:0 0 8px 0;font-size:11px;font-weight:600;color:#7A9A7A;letter-spacing:0.08em;text-transform:uppercase;">Private invitation</p>
 
               <!-- Headline -->
-              <h1 style="margin:0 0 16px 0;font-size:26px;font-weight:400;color:#1A2E1A;line-height:1.25;">You're invited to review CorArc.</h1>
+              <h1 style="margin:0 0 16px 0;font-size:26px;font-weight:400;color:#1A2E1A;line-height:1.25;">You're invited to review WMGR.</h1>
 
               <!-- Subhead -->
               <p style="margin:0 0 28px 0;font-size:15px;color:#4A6A4A;line-height:1.65;">We've been building something I think you'll find compelling — a platform designed specifically for wealth advisors working with business owner clients.</p>
@@ -77,7 +77,7 @@ const INVITE_HTML = `<!DOCTYPE html>
               </table>
 
               <!-- What it does -->
-              <p style="margin:0 0 20px 0;font-size:11px;font-weight:600;color:#7A9A7A;letter-spacing:0.08em;text-transform:uppercase;">What CorArc does</p>
+              <p style="margin:0 0 20px 0;font-size:11px;font-weight:600;color:#7A9A7A;letter-spacing:0.08em;text-transform:uppercase;">What WMGR does</p>
 
               <!-- Feature 1 -->
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;">
@@ -100,7 +100,7 @@ const INVITE_HTML = `<!DOCTYPE html>
                   </td>
                   <td style="padding-left:14px;">
                     <p style="margin:0 0 3px;font-size:14px;font-weight:600;color:#1A2E1A;">Prioritized advisor path</p>
-                    <p style="margin:0;font-size:13px;color:#4A6A4A;line-height:1.55;">For each client, CorArc surfaces the highest-impact conversations to have — in priority order, based on their specific risk profile and exit timeline.</p>
+                    <p style="margin:0;font-size:13px;color:#4A6A4A;line-height:1.55;">For each client, WMGR surfaces the highest-impact conversations to have — in priority order, based on their specific risk profile and exit timeline.</p>
                   </td>
                 </tr>
               </table>
@@ -112,8 +112,8 @@ const INVITE_HTML = `<!DOCTYPE html>
                     <div style="width:22px;height:22px;background-color:#F0F7F0;border-radius:5px;text-align:center;line-height:22px;font-size:13px;">✨</div>
                   </td>
                   <td style="padding-left:14px;">
-                    <p style="margin:0 0 3px;font-size:14px;font-weight:600;color:#1A2E1A;">Ask CorArc — AI advisor coaching</p>
-                    <p style="margin:0;font-size:13px;color:#4A6A4A;line-height:1.55;">Before any client meeting, ask CorArc how to approach a specific conversation. It gives you a tailored opening line, context on why it matters for this client, and how to handle objections.</p>
+                    <p style="margin:0 0 3px;font-size:14px;font-weight:600;color:#1A2E1A;">Ask WMGR — AI advisor coaching</p>
+                    <p style="margin:0;font-size:13px;color:#4A6A4A;line-height:1.55;">Before any client meeting, ask WMGR how to approach a specific conversation. It gives you a tailored opening line, context on why it matters for this client, and how to handle objections.</p>
                   </td>
                 </tr>
               </table>
@@ -131,7 +131,7 @@ const INVITE_HTML = `<!DOCTYPE html>
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
                 <tr>
                   <td align="center">
-                    <a href="https://glyde-alpha.vercel.app/signup" style="display:inline-block;background-color:#5CA85C;color:#ffffff;font-size:15px;font-weight:500;text-decoration:none;padding:14px 40px;border-radius:8px;">Create your account →</a>
+                    <a href="https://glyde-alpha.vercel.app/signup" style="display:inline-block;background-color:#395E38;color:#ffffff;font-size:15px;font-weight:500;text-decoration:none;padding:14px 40px;border-radius:8px;">Create your account →</a>
                   </td>
                 </tr>
               </table>
@@ -153,7 +153,7 @@ const INVITE_HTML = `<!DOCTYPE html>
           <!-- Footer -->
           <tr>
             <td align="center" style="padding-top:20px;padding-bottom:8px;">
-              <p style="margin:0;font-size:11px;color:#7A9A7A;letter-spacing:0.03em;">CorArc &nbsp;·&nbsp; Built for advisors &nbsp;·&nbsp; Distributed through firms</p>
+              <p style="margin:0;font-size:11px;color:#7A9A7A;letter-spacing:0.03em;">WMGR &nbsp;·&nbsp; Built for advisors &nbsp;·&nbsp; Distributed through firms</p>
             </td>
           </tr>
 

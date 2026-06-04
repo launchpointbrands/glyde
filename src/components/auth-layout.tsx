@@ -23,7 +23,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
         />
         <div aria-hidden className="absolute inset-0 -z-10 bg-black/20" />
 
-        <Wordmark className="text-[26px] text-white" />
+        <Wordmark tone="light" className="text-[26px]" />
 
         <div className="max-w-md">
           <h1 className="text-stat font-medium leading-[1.25] text-white">
@@ -31,7 +31,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
             for.
           </h1>
           <p className="mt-5 text-body text-white/70">
-            CorArc helps wealth advisors go deeper with their business owner
+            WMGR helps wealth advisors go deeper with their business owner
             clients — with the language, structure, and tools to unlock
             conversations that matter.
           </p>

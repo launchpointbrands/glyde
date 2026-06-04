@@ -39,7 +39,7 @@ export function PdfCover({
           marginBottom: 60,
         }}
       >
-        CorArc
+        WMGR
       </Text>
 
       <Text style={styles.eyebrow}>Confidential report</Text>

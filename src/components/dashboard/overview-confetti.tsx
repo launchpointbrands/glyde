@@ -12,11 +12,11 @@ export function OverviewConfetti() {
       try {
         const confetti = (await import("canvas-confetti")).default;
         const colors = [
-          "#5CA85C",
-          "#3D7A3D",
-          "#A8D8A8",
-          "#1F4A1F",
-          "#D4EDD4",
+          "#395E38",
+          "#2C4A2B",
+          "#A9C3A8",
+          "#1C311C",
+          "#D8E4D7",
         ];
 
         // Left side burst

@@ -149,7 +149,7 @@ export default async function WalkthroughPage({
         <div className="mt-8">
           <div
             key={step.number /* fade between questions */}
-            className="animate-[corarc-fadein_300ms_ease-out] rounded-[10px] border border-border-subtle bg-bg-card px-7 py-9 shadow-card md:px-10"
+            className="animate-[wmgr-fadein_300ms_ease-out] rounded-[10px] border border-border-subtle bg-bg-card px-7 py-9 shadow-card md:px-10"
           >
             <WalkthroughQuestion
               caseId={caseId}

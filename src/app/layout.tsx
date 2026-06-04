@@ -17,7 +17,7 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CorArc",
+  title: "WMGR",
   description: "Glide-path conversation tool for wealth advisors",
 };
 
