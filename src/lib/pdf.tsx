@@ -17,7 +17,7 @@ import {
   WealthDocument,
   type WealthReportData,
 } from "@/components/pdf/pdf-wealth";
-import type { ReportBranding } from "@/components/pdf/pdf-cover";
+import { resolveBranding } from "@/lib/branding";
 import { ensureFinancials } from "@/lib/financials";
 import { evaluateRiskFactors } from "@/lib/risk";
 import { createClient } from "@/lib/supabase/server";
@@ -66,7 +66,7 @@ async function loadCommonContext(caseId: string) {
     supabase
       .from("cases")
       .select(
-        "id, label, ownership_pct, firm_id, client_business:client_businesses(business_name, contact_name, primary_owner_name)",
+        "id, label, ownership_pct, firm_id, advisor_id, client_business:client_businesses(business_name, contact_name, primary_owner_name)",
       )
       .eq("id", caseId)
       .maybeSingle(),
@@ -79,25 +79,12 @@ async function loadCommonContext(caseId: string) {
 
   if (!caseRow) throw new Error("Case not found.");
 
-  // Resolve report branding. Phase 1: the entity (firm). Phase 2 will prefer
-  // the advisor's subentity when one is assigned — this is the single place
-  // that needs to change for that.
-  const { data: firm } = await supabase
-    .from("firms")
-    .select(
-      "name, logo_url, primary_color, disclosure_text, contact_email, contact_phone",
-    )
-    .eq("id", caseRow.firm_id)
-    .maybeSingle();
-
-  const branding: ReportBranding = {
-    name: (firm?.name as string | null) ?? "",
-    logoUrl: (firm?.logo_url as string | null) ?? null,
-    primaryColor: (firm?.primary_color as string | null) ?? null,
-    disclosure: (firm?.disclosure_text as string | null) ?? null,
-    contactEmail: (firm?.contact_email as string | null) ?? null,
-    contactPhone: (firm?.contact_phone as string | null) ?? null,
-  };
+  // Report branding: the case advisor's subentity when assigned, else the
+  // firm (entity). Resolved in one place — see resolveBranding.
+  const branding = await resolveBranding(supabase, {
+    firmId: caseRow.firm_id as string,
+    advisorId: (caseRow.advisor_id as string | null) ?? null,
+  });
 
   const cb = Array.isArray(caseRow.client_business)
     ? caseRow.client_business[0]

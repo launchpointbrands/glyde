@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; invite?: string }>;
 }) {
   const supabase = await createClient();
   const {
@@ -16,7 +16,24 @@ export default async function SignupPage({
   } = await supabase.auth.getUser();
   if (user) redirect("/app");
 
-  const { error } = await searchParams;
+  const { error, invite } = await searchParams;
+
+  // Validate any invite token (pre-auth) so we can greet the invitee and
+  // prefill their email. invite_preview is a SECURITY DEFINER RPC.
+  let invitePreview:
+    | { firm_name: string; subentity_name: string | null; invite_email: string | null }
+    | null = null;
+  if (invite) {
+    const { data } = await supabase.rpc("invite_preview", { p_token: invite });
+    const row = Array.isArray(data) ? data[0] : data;
+    if (row) {
+      invitePreview = {
+        firm_name: row.firm_name,
+        subentity_name: row.subentity_name ?? null,
+        invite_email: row.invite_email ?? null,
+      };
+    }
+  }
 
   return (
     <AuthLayout>
@@ -26,15 +43,31 @@ export default async function SignupPage({
             Create your account
           </h1>
           <p className="mt-1.5 text-meta text-text-tertiary">
-            Start your free advisor account
+            {invitePreview
+              ? `Join ${invitePreview.subentity_name ?? invitePreview.firm_name} on WMGR`
+              : "Start your free advisor account"}
           </p>
         </div>
+
+        {invitePreview ? (
+          <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-meta text-green-800">
+            You&apos;ve been invited to{" "}
+            <span className="font-semibold">{invitePreview.firm_name}</span>
+            {invitePreview.subentity_name
+              ? ` · ${invitePreview.subentity_name}`
+              : ""}
+            . Your firm and role are already set — just finish your account.
+          </div>
+        ) : null}
 
         <GoogleButton />
 
         <Divider label="or" />
 
         <form action={signUp} className="space-y-4">
+          {invite ? (
+            <input type="hidden" name="invite_token" value={invite} />
+          ) : null}
           <Field id="full_name" label="Full name">
             <input
               id="full_name"
@@ -53,6 +86,7 @@ export default async function SignupPage({
               type="email"
               required
               autoComplete="email"
+              defaultValue={invitePreview?.invite_email ?? undefined}
               className={inputClass}
             />
           </Field>

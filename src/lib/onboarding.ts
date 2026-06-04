@@ -31,10 +31,12 @@ export async function saveAdvisorProfile(formData: FormData) {
     );
   }
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("advisors")
     .update({ full_name: fullName, title })
-    .eq("id", userId);
+    .eq("id", userId)
+    .select("role")
+    .single();
 
   if (error) {
     redirect(
@@ -42,6 +44,11 @@ export async function saveAdvisorProfile(formData: FormData) {
     );
   }
 
+  // Firm admins get a branding step (logo + brand color) before adding a
+  // client. Regular advisors inherit firm/subentity branding and skip it.
+  if (updated?.role === "firm_admin") {
+    redirect("/onboarding?step=brand");
+  }
   redirect("/onboarding?step=2");
 }
 

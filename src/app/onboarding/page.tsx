@@ -1,5 +1,9 @@
+import Image from "next/image";
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import { OnboardingStep2 } from "@/components/onboarding-step-2";
 import { Wordmark } from "@/components/wordmark";
+import { updateFirmBranding, uploadBrandLogo } from "@/lib/branding-actions";
 import { saveAdvisorProfile } from "@/lib/onboarding";
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,10 +18,11 @@ const TITLES = [
 export default async function OnboardingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ step?: string; error?: string }>;
+  searchParams: Promise<{ step?: string; error?: string; status?: string }>;
 }) {
-  const { step: stepParam, error } = await searchParams;
-  const step = stepParam === "2" ? 2 : 1;
+  const { step: stepParam, error, status } = await searchParams;
+  const step: 1 | 2 | "brand" =
+    stepParam === "2" ? 2 : stepParam === "brand" ? "brand" : 1;
 
   const supabase = await createClient();
   const {
@@ -26,16 +31,30 @@ export default async function OnboardingPage({
   if (!user) return null;
   const { data: advisor } = await supabase
     .from("advisors")
-    .select("full_name, title")
+    .select("full_name, title, role, firm_id")
     .eq("id", user.id)
     .single();
+
+  // Guard: only firm admins see the branding step.
+  if (step === "brand" && advisor?.role !== "firm_admin") {
+    redirect("/onboarding?step=2");
+  }
+
+  const { data: firm } =
+    step === "brand" && advisor?.firm_id
+      ? await supabase
+          .from("firms")
+          .select("name, logo_url, primary_color")
+          .eq("id", advisor.firm_id)
+          .single()
+      : { data: null };
 
   return (
     <main className="flex min-h-screen flex-col bg-bg-page">
       <header className="flex items-center justify-between px-10 py-7">
         <Wordmark className="text-[22px] text-text-primary" />
         <p className="text-eyebrow uppercase text-text-tertiary">
-          Step {step} of 2
+          {step === "brand" ? "Brand your firm" : `Step ${step} of 2`}
         </p>
       </header>
 
@@ -47,12 +66,123 @@ export default async function OnboardingPage({
               defaultTitle={advisor?.title ?? ""}
               error={error}
             />
+          ) : step === "brand" ? (
+            <BrandStep
+              firmName={firm?.name ?? ""}
+              logoUrl={firm?.logo_url ?? null}
+              primaryColor={firm?.primary_color ?? ""}
+              status={status}
+            />
           ) : (
             <Step2 error={error} />
           )}
         </div>
       </div>
     </main>
+  );
+}
+
+function BrandStep({
+  firmName,
+  logoUrl,
+  primaryColor,
+  status,
+}: {
+  firmName: string;
+  logoUrl: string | null;
+  primaryColor: string;
+  status?: string;
+}) {
+  const NEXT = "/onboarding?step=brand";
+  return (
+    <>
+      <div>
+        <h1 className="text-display font-light leading-[1.1] text-text-primary">
+          Brand your reports
+        </h1>
+        <p className="mt-3 text-body text-text-secondary">
+          Reports go out under your firm&apos;s brand. Add a logo and color now,
+          or set them later in Settings → Branding.
+        </p>
+      </div>
+
+      {status ? (
+        <p className="mt-6 rounded-md border border-green-200 bg-green-50 px-4 py-2.5 text-meta text-green-800">
+          {status}
+        </p>
+      ) : null}
+
+      <div className="mt-8 space-y-5 rounded-[10px] border border-border-subtle bg-bg-card px-7 py-7 shadow-card">
+        <div>
+          <p className="text-meta font-medium text-text-primary">Firm logo</p>
+          <div className="mt-2 flex items-center gap-4">
+            <div className="flex h-14 w-32 items-center justify-center rounded-md border border-border-subtle bg-bg-input">
+              {logoUrl ? (
+                <Image
+                  src={logoUrl}
+                  alt="Firm logo"
+                  width={120}
+                  height={48}
+                  unoptimized
+                  className="max-h-12 w-auto object-contain"
+                />
+              ) : (
+                <span className="text-eyebrow uppercase text-text-tertiary">
+                  No logo
+                </span>
+              )}
+            </div>
+            <form action={uploadBrandLogo} className="flex items-center gap-2">
+              <input type="hidden" name="scope" value="firm" />
+              <input type="hidden" name="next" value={NEXT} />
+              <input
+                type="file"
+                name="logo"
+                accept="image/png,image/jpeg,image/svg+xml"
+                className="text-meta text-text-secondary file:mr-2 file:rounded file:border file:border-border-default file:bg-bg-card file:px-2 file:py-1 file:text-text-primary"
+              />
+              <button
+                type="submit"
+                className="shrink-0 rounded-md bg-green-400 px-3.5 py-2 text-meta font-medium text-text-inverse transition-colors hover:bg-green-600"
+              >
+                Upload
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <form action={updateFirmBranding} className="space-y-4 border-t border-border-subtle pt-5">
+          <input type="hidden" name="next" value={NEXT} />
+          <Field id="name" label="Firm name">
+            <input id="name" name="name" type="text" required defaultValue={firmName} className={inputClass} />
+          </Field>
+          <Field id="primary_color" label="Brand color (hex)">
+            <input id="primary_color" name="primary_color" type="text" placeholder="#1F4E79" defaultValue={primaryColor} className={`${inputClass} font-mono`} />
+          </Field>
+          <button
+            type="submit"
+            className="rounded-md bg-green-400 px-5 py-2.5 text-meta font-medium text-text-inverse transition-colors hover:bg-green-600"
+          >
+            Save brand
+          </button>
+        </form>
+      </div>
+
+      <div className="mt-6 flex items-center gap-5">
+        <Link
+          href="/onboarding?step=2"
+          className="rounded-md bg-green-400 px-5 py-2.5 text-meta font-medium text-text-inverse transition-colors hover:bg-green-600"
+        >
+          Continue →
+        </Link>
+        <Link
+          href="/onboarding?step=2"
+          className="text-meta text-text-tertiary underline-offset-4 transition-colors hover:text-text-primary hover:underline"
+        >
+          Skip for now
+        </Link>
+      </div>
+    </>
   );
 }
 

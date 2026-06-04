@@ -16,12 +16,21 @@ export async function signUp(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const fullName = String(formData.get("full_name") ?? "").trim();
+  // Tokenized invite: carried as a hidden field. Stored on user metadata so
+  // the handle_new_user trigger can bind firm/subentity/role on insert.
+  const inviteToken = String(formData.get("invite_token") ?? "").trim();
+  const inviteSuffix = inviteToken
+    ? `&invite=${encodeURIComponent(inviteToken)}`
+    : "";
 
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { full_name: fullName },
+      data: {
+        full_name: fullName,
+        ...(inviteToken ? { invite_token: inviteToken } : {}),
+      },
       // No redirect URL → Supabase sends the 6-digit OTP code instead of
       // a magic-link confirmation URL.
       emailRedirectTo: undefined,
@@ -29,7 +38,9 @@ export async function signUp(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/signup?error=${encodeURIComponent(error.message)}`);
+    redirect(
+      `/signup?error=${encodeURIComponent(error.message)}${inviteSuffix}`,
+    );
   }
 
   revalidatePath("/", "layout");

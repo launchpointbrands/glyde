@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { signOut } from "@/lib/auth";
 import { seedDemoCase } from "@/lib/demo";
 import { createClient } from "@/lib/supabase/server";
@@ -13,6 +14,8 @@ export default async function SettingsPage() {
     .select("full_name, email, role, firm_id")
     .eq("id", user!.id)
     .single();
+
+  const isFirmAdmin = advisor?.role === "firm_admin";
 
   const { data: firm } = advisor?.firm_id
     ? await supabase
@@ -38,6 +41,23 @@ export default async function SettingsPage() {
           <dt className="text-text-tertiary">Role</dt>
           <dd className="text-text-primary">{advisor?.role ?? "—"}</dd>
         </dl>
+        {isFirmAdmin ? (
+          <Link
+            href="/app/settings/branding"
+            className="flex items-center justify-between rounded-[10px] border border-border-subtle bg-bg-card px-6 py-4 shadow-card transition-colors hover:bg-bg-hover"
+          >
+            <span>
+              <span className="block text-meta font-medium text-text-primary">
+                Branding &amp; team
+              </span>
+              <span className="block text-meta text-text-secondary">
+                White-label your reports, manage subentities, and invite advisors.
+              </span>
+            </span>
+            <span className="text-green-600">→</span>
+          </Link>
+        ) : null}
+
         <div className="flex items-center gap-3 pt-2">
           <form action={seedDemoCase}>
             <button
