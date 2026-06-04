@@ -6,6 +6,7 @@ import { OverviewConfetti } from "@/components/dashboard/overview-confetti";
 import { StatCard, StatCardHeading } from "@/components/dashboard/stat-card";
 import { ValuationScaleBar } from "@/components/dashboard/valuation-scale-bar";
 import { getCaseStats } from "@/lib/case-stats";
+import { ensureFinancials } from "@/lib/financials";
 import { buildPathItems } from "@/lib/path";
 import { createClient } from "@/lib/supabase/server";
 
@@ -42,6 +43,17 @@ export default async function CaseOverviewPage({
   params: Promise<{ id: string }>;
 }) {
   const { id: caseId } = await params;
+
+  // Lazily generate valuation / risk / wealth / succession rows the first
+  // time the advisor lands on the Overview after discovery. Idempotent and
+  // self-healing — a no-op once the four module tables are populated. Kept
+  // out of createCase so the "add client" Server Action stays fast.
+  try {
+    await ensureFinancials({ caseId });
+  } catch (e) {
+    console.error("ensureFinancials (overview) failed", e);
+  }
+
   const supabase = await createClient();
 
   const [stats, pathItems, { data: caseRow }] = await Promise.all([

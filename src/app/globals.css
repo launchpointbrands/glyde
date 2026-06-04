@@ -161,3 +161,15 @@
     @apply font-sans;
   }
 }
+
+/* Shared fade-in used by full-screen flows (processing, intake,
+   discovery walkthrough). Defined globally so any component can use
+   `animate-[corarc-fadein_300ms_ease-out]`. */
+@keyframes corarc-fadein {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

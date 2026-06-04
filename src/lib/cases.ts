@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { generateBusinessDescription } from "@/lib/business-description";
-import { ensureFinancials } from "@/lib/financials";
 import { createClient } from "@/lib/supabase/server";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -104,7 +103,7 @@ export async function createCase(formData: FormData) {
   }
 
   // Best-effort: kick off the AI business description. A failure here
-  // (no API key, network) shouldn't block the redirect into the case.
+  // (no API key, network) shouldn't block the redirect into discovery.
   try {
     await generateBusinessDescription({
       clientBusinessId: cb.id,
@@ -115,16 +114,19 @@ export async function createCase(formData: FormData) {
     console.error("generateBusinessDescription (createCase) failed", e);
   }
 
-  // Generate AI-powered realistic financial estimates and populate
-  // valuation_snapshots / risk_assessments / wealth_plans /
-  // succession_plans. Self-healing on partial failure; falls back to
-  // the clamped simulator if AI is unavailable.
-  try {
-    await ensureFinancials({ caseId: caseRow.id });
-  } catch (e) {
-    console.error("ensureFinancials (createCase) failed", e);
-  }
+  // NOTE: financial estimation (ensureFinancials) is deliberately NOT run
+  // here. It makes a second Anthropic call which, stacked on the business
+  // description call above, pushed this Server Action past the serverless
+  // function time budget — the function was killed before redirect(), so
+  // the form appeared to "go nowhere" and advisors re-submitted, creating
+  // duplicate empty cases. Financials are now generated lazily by the
+  // dashboard pages (ensureFinancials is idempotent + self-healing) after
+  // the advisor finishes discovery, where the questionnaire answers also
+  // make the estimates sharper.
 
   revalidatePath("/app");
-  redirect(`/app/processing?caseId=${caseRow.id}`);
+  // Drop the advisor straight into the full-screen discovery questionnaire
+  // instead of the processing animation — they answer (or skip) the
+  // questions first, then the processing step crunches the analysis.
+  redirect(`/app/cases/${caseRow.id}/discovery/walkthrough?q=1`);
 }

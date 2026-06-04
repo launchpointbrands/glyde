@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { X } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { WalkthroughQuestion } from "@/components/discovery/walkthrough-question";
+import { Wordmark } from "@/components/wordmark";
 import {
   SECTIONS,
   TOTAL_STEPS,
@@ -106,26 +108,50 @@ export default async function WalkthroughPage({
     ? `/app/processing?caseId=${caseId}`
     : `/app/cases/${caseId}/discovery/walkthrough?q=${step.number + 1}`;
 
-  // Next-eligible once the field has a row, regardless of status.
-  const canAdvance = Boolean(typedResponse);
+  // Whether the advisor has answered (vs. skipped / not yet touched). Used
+  // only to label the primary button — Next is always available so they can
+  // move forward, or skip for later, on any question.
+  const isAnswered = typedResponse?.status === "answered";
 
   return (
-    <main className="flex flex-1 flex-col px-10 pt-10 pb-16">
-      <div className="mx-auto w-full max-w-[1120px]">
-        {/* Static page chrome — same on every question */}
-        <div className="mb-8">
-          <h1 className="text-[32px] font-semibold leading-tight text-text-primary">
+    <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-bg-page">
+      {/* Top bar — brand, segmented progress, exit */}
+      <header className="shrink-0 border-b border-border-subtle bg-bg-card px-6 py-4 md:px-10">
+        <div className="mx-auto flex w-full max-w-[760px] items-center justify-between gap-6">
+          <Wordmark className="hidden text-[18px] text-text-primary sm:block" />
+          <p className="truncate text-meta font-medium text-text-primary">
+            <span className="text-text-tertiary">Question </span>
+            <span className="font-mono tabular-nums">{step.number}</span>
+            <span className="text-text-tertiary"> / {TOTAL_STEPS}</span>
+          </p>
+          <Link
+            href={`/app/cases/${caseId}`}
+            className="inline-flex items-center gap-1.5 text-meta text-text-tertiary transition-colors hover:text-text-primary"
+          >
+            Save &amp; exit
+            <X className="h-3.5 w-3.5" aria-hidden />
+          </Link>
+        </div>
+      </header>
+
+      <div className="mx-auto w-full max-w-[760px] px-6 pt-8 pb-16">
+        <div className="mb-6">
+          <h1 className="text-[26px] font-semibold leading-tight text-text-primary md:text-[30px]">
             Tell us about {businessName}
           </h1>
-          <p className="mt-2 text-body text-text-secondary">
-            Answer each question to unlock your client&apos;s full analysis.
+          <p className="mt-1.5 text-body text-text-secondary">
+            Answer what you can — skip anything you don&apos;t know yet and come
+            back to it later.
           </p>
         </div>
 
         <SectionProgress currentQ={step.number} />
 
         <div className="mt-8">
-          <div className="mx-auto max-w-[680px] rounded-[10px] border border-border-subtle bg-bg-card px-10 py-10 shadow-card">
+          <div
+            key={step.number /* fade between questions */}
+            className="animate-[corarc-fadein_300ms_ease-out] rounded-[10px] border border-border-subtle bg-bg-card px-7 py-9 shadow-card md:px-10"
+          >
             <WalkthroughQuestion
               caseId={caseId}
               field={typedField}
@@ -140,28 +166,17 @@ export default async function WalkthroughPage({
               >
                 ← Back
               </Link>
-              {canAdvance ? (
-                <Link
-                  href={nextHref}
-                  className="rounded-md bg-green-400 px-4 py-2 text-meta font-medium text-text-inverse transition-colors hover:bg-green-600"
-                >
-                  {isLast ? "Complete →" : "Next →"}
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  disabled
-                  title="Answer, skip, or flag this question to continue"
-                  className="cursor-not-allowed rounded-md bg-green-400 px-4 py-2 text-meta font-medium text-text-inverse opacity-40"
-                >
-                  {isLast ? "Complete →" : "Next →"}
-                </button>
-              )}
+              <Link
+                href={nextHref}
+                className="rounded-md bg-green-400 px-5 py-2 text-meta font-medium text-text-inverse transition-colors hover:bg-green-600"
+              >
+                {isLast ? "Complete →" : isAnswered ? "Next →" : "Skip for now →"}
+              </Link>
             </div>
           </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
 
