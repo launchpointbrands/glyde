@@ -85,9 +85,14 @@ export function WealthDocument(props: WealthReportData) {
       />
 
       <Page size="LETTER" style={styles.page}>
-        <PdfHeader reportType="Wealth" />
+        <PdfHeader
+          reportType="Wealth"
+          brandName={props.branding.name}
+          accentColor={props.branding.primaryColor}
+        />
         <PdfFooter contactName={contactName} businessName={businessName} />
 
+        <View wrap={false}>
         <Text style={styles.sectionTitle}>Wealth goals</Text>
         <Text style={styles.body}>
           Knowing how the business fits into the long-term financial plan
@@ -112,7 +117,9 @@ export function WealthDocument(props: WealthReportData) {
             Business EBITDA needs to reach <B>{formatUSDShort(goalEbitda)}</B>
           </Bullet>
         </View>
+        </View>
 
+        <View wrap={false}>
         <Text style={[styles.sectionTitle, { marginTop: 14 }]}>
           Liquidity goals
         </Text>
@@ -133,7 +140,9 @@ export function WealthDocument(props: WealthReportData) {
             maxBar={maxBar}
           />
         </View>
+        </View>
 
+        <View wrap={false}>
         <Text style={[styles.sectionTitle, { marginTop: 14 }]}>
           EBITDA: historic vs. goal
         </Text>
@@ -145,7 +154,9 @@ export function WealthDocument(props: WealthReportData) {
             max={ebitdaMax}
           />
         </View>
+        </View>
 
+        <View wrap={false}>
         <Text style={[styles.sectionTitle, { marginTop: 14 }]}>
           Business KPIs
         </Text>
@@ -171,6 +182,7 @@ export function WealthDocument(props: WealthReportData) {
             <KpiRow label="Current" value={cap(props.currentRisk)} />
             <KpiRow label="Goal" value={cap(props.goalRisk)} />
           </KpiBlock>
+        </View>
         </View>
       </Page>
     </Document>

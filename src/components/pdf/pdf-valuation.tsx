@@ -92,9 +92,14 @@ export function ValuationDocument(props: ValuationReportData) {
 
       {/* Page 2 — hero + methodology + factor cards */}
       <Page size="LETTER" style={styles.page}>
-        <PdfHeader reportType="Valuation" />
+        <PdfHeader
+          reportType="Valuation"
+          brandName={props.branding.name}
+          accentColor={props.branding.primaryColor}
+        />
         <PdfFooter contactName={contactName} businessName={businessName} />
 
+        <View wrap={false}>
         <Text style={styles.sectionTitle}>Valuation estimates</Text>
         <Text style={styles.body}>
           The value of all equity in the business was estimated based on the
@@ -127,7 +132,9 @@ export function ValuationDocument(props: ValuationReportData) {
             </View>
           </View>
         </View>
+        </View>
 
+        <View wrap={false}>
         <Text style={[styles.sectionTitle, { marginTop: 18 }]}>Methodology</Text>
         <Text style={styles.body}>
           Three commonly accepted valuation methodologies were referenced and
@@ -148,6 +155,9 @@ export function ValuationDocument(props: ValuationReportData) {
           />
         </View>
 
+        </View>
+
+        <View wrap={false}>
         <View style={{ marginTop: 16, flexDirection: "row", gap: 8 }}>
           <FactorCard title="Revenue & Earnings">
             <Kv k="2024 Revenue" v={formatUSDFull(snap.revenue_ttm)} />
@@ -199,15 +209,21 @@ export function ValuationDocument(props: ValuationReportData) {
             />
           </FactorCard>
         </View>
+        </View>
       </Page>
 
       {/* Page 3+ — appendix tables (demo only) and characteristics */}
       <Page size="LETTER" style={styles.page}>
-        <PdfHeader reportType="Valuation" />
+        <PdfHeader
+          reportType="Valuation"
+          brandName={props.branding.name}
+          accentColor={props.branding.primaryColor}
+        />
         <PdfFooter contactName={contactName} businessName={businessName} />
 
         {isDemo ? (
           <>
+            <View wrap={false}>
             <Text style={styles.sectionTitle}>Profit & Loss data</Text>
             <View style={styles.card}>
               <PlRow
@@ -234,7 +250,9 @@ export function ValuationDocument(props: ValuationReportData) {
                 bold
               />
             </View>
+            </View>
 
+            <View wrap={false}>
             <Text style={[styles.sectionTitle, { marginTop: 14 }]}>
               Balance sheet data
             </Text>
@@ -278,9 +296,11 @@ export function ValuationDocument(props: ValuationReportData) {
                 ))}
               </View>
             </View>
+            </View>
           </>
         ) : null}
 
+        <View wrap={false}>
         <Text style={[styles.sectionTitle, { marginTop: 14 }]}>
           Business characteristics
         </Text>
@@ -319,6 +339,7 @@ export function ValuationDocument(props: ValuationReportData) {
               </View>
             ))
           )}
+        </View>
         </View>
       </Page>
     </Document>

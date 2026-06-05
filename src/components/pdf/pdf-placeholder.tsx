@@ -43,7 +43,11 @@ export function PlaceholderDocument({
       />
 
       <Page size="LETTER" style={styles.page}>
-        <PdfHeader reportType={reportType} />
+        <PdfHeader
+          reportType={reportType}
+          brandName={branding.name}
+          accentColor={branding.primaryColor}
+        />
         <PdfFooter contactName={contactName} businessName={businessName} />
 
         <View

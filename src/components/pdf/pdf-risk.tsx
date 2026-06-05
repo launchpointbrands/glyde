@@ -76,9 +76,14 @@ export function RiskDocument(props: RiskReportData) {
       />
 
       <Page size="LETTER" style={styles.page}>
-        <PdfHeader reportType="Risk" />
+        <PdfHeader
+          reportType="Risk"
+          brandName={props.branding.name}
+          accentColor={props.branding.primaryColor}
+        />
         <PdfFooter contactName={contactName} businessName={businessName} />
 
+        <View wrap={false}>
         <Text style={styles.sectionTitle}>Business risk score</Text>
         <View style={[styles.card, { flexDirection: "row", gap: 16 }]}>
           <View style={{ flex: 1 }}>
@@ -111,7 +116,9 @@ export function RiskDocument(props: RiskReportData) {
             </Text>
           </View>
         </View>
+        </View>
 
+        <View wrap={false}>
         <Text style={[styles.sectionTitle, { marginTop: 14 }]}>
           Risk factors
         </Text>
@@ -194,7 +201,9 @@ export function RiskDocument(props: RiskReportData) {
             ))}
           </View>
         )}
+        </View>
 
+        <View wrap={false}>
         <Text style={[styles.sectionTitle, { marginTop: 14 }]}>
           Buy-sell arrangement
         </Text>
@@ -239,6 +248,7 @@ export function RiskDocument(props: RiskReportData) {
           mechanisms include life insurance, disability insurance, or cash
           reserves.
         </Text>
+        </View>
       </Page>
     </Document>
   );

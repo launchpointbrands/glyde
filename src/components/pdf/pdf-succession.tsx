@@ -74,9 +74,14 @@ export function SuccessionDocument(props: SuccessionReportData) {
       />
 
       <Page size="LETTER" style={styles.page}>
-        <PdfHeader reportType="Succession" />
+        <PdfHeader
+          reportType="Succession"
+          brandName={props.branding.name}
+          accentColor={props.branding.primaryColor}
+        />
         <PdfFooter contactName={contactName} businessName={businessName} />
 
+        <View wrap={false}>
         <Text style={styles.sectionTitle}>Your priorities</Text>
         <Text style={styles.body}>
           Clarity on what matters most during a future exit guides the
@@ -106,7 +111,9 @@ export function SuccessionDocument(props: SuccessionReportData) {
             ))
           )}
         </View>
+        </View>
 
+        <View wrap={false}>
         <Text style={[styles.sectionTitle, { marginTop: 14 }]}>
           Succession & exit readiness
         </Text>
@@ -127,8 +134,9 @@ export function SuccessionDocument(props: SuccessionReportData) {
             </Text>
           </View>
         </View>
+        </View>
 
-        <View style={{ flexDirection: "row", gap: 12, marginTop: 14 }}>
+        <View wrap={false} style={{ flexDirection: "row", gap: 12, marginTop: 14 }}>
           <View style={{ flex: 1 }}>
             <Text style={styles.sectionTitle}>Personal readiness</Text>
             <Checklist items={personalItems} />
