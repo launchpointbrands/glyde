@@ -32,6 +32,82 @@ const PATH_TITLE: Record<string, string> = {
   esop: "ESOP",
 };
 
+type PathContent = {
+  heading: string;
+  intro: string;
+  elements: string[];
+  questions: string[];
+};
+
+// Narrative tailored to the chosen transition path. Client-facing voice
+// (the business owner reads it). Falls back to `family` for unknown paths.
+const PATH_CONTENT: Record<string, PathContent> = {
+  family: {
+    heading: "Transitioning the business to family",
+    intro:
+      "Transitioning to family prioritizes legacy, continuity, and relationships. This is one of the most meaningful ways to preserve your business's values, identity, and long-term impact.",
+    elements: [
+      "Identifying the right successor(s)",
+      "Preserving harmony by aligning family and business",
+      "Navigating ownership, compensation, and governance",
+    ],
+    questions: [
+      "How will this impact family relationships?",
+      "Are your successors prepared for leadership?",
+      "How do you envision your role after the transition?",
+      "What is your plan for income and lifestyle post-exit?",
+    ],
+  },
+  internal: {
+    heading: "Transitioning to your management team",
+    intro:
+      "An internal transition rewards the people who helped build the business and keeps continuity for your customers and staff. It often trades a higher headline price for a smoother handoff and a lasting legacy.",
+    elements: [
+      "Identifying and developing your successor leaders",
+      "Structuring financing the team can realistically fund",
+      "Defining a clear leadership and ownership timeline",
+    ],
+    questions: [
+      "Are your key people ready and willing to lead?",
+      "How will the purchase be financed — seller note, earn-out, or gradual buy-in?",
+      "How involved do you stay during the handoff?",
+      "What is your plan for income and lifestyle post-exit?",
+    ],
+  },
+  third_party: {
+    heading: "Selling to a third-party buyer",
+    intro:
+      "A third-party sale typically maximizes the financial value of your exit and offers a clean break. Preparation and positioning are what separate a good outcome from a great one.",
+    elements: [
+      "Positioning the business to be attractive and diligence-ready",
+      "Identifying the right pool of strategic or financial buyers",
+      "Negotiating deal structure, terms, and transition support",
+    ],
+    questions: [
+      "Is the business ready to withstand buyer diligence?",
+      "What deal structure and price would make this worth it?",
+      "How long are you willing to stay on after the sale?",
+      "What is your plan for income and lifestyle post-exit?",
+    ],
+  },
+  esop: {
+    heading: "Transitioning to an employee stock ownership plan (ESOP)",
+    intro:
+      "An ESOP sells the business to your employees through a trust — offering significant tax advantages while rewarding your team and preserving the company's independence and culture.",
+    elements: [
+      "Confirming the business qualifies and can support the structure",
+      "Designing the ESOP and its financing",
+      "Establishing governance and a repurchase obligation plan",
+    ],
+    questions: [
+      "Is the company's cash flow strong enough to support an ESOP?",
+      "What tax advantages apply to your situation?",
+      "How will governance and management continuity be handled?",
+      "What is your plan for income and lifestyle post-exit?",
+    ],
+  },
+};
+
 const ROADMAP = [
   {
     icon: Eye,
@@ -157,6 +233,7 @@ export default async function SuccessionPage({
 
   const path = plan.selected_path ?? "family";
   const pathTitle = PATH_TITLE[path] ?? "Transition";
+  const pathContent = PATH_CONTENT[path] ?? PATH_CONTENT.family;
   const priorities = (plan.priorities ?? []) as string[];
 
   const currentValuation = valuation?.valuation_estimate ?? 0;
@@ -193,30 +270,26 @@ export default async function SuccessionPage({
 
             <section>
               <h2 className="text-section font-medium text-text-primary">
-                Transitioning the business to family
+                {pathContent.heading}
               </h2>
               <p className="mt-3 text-body text-text-secondary">
-                Transitioning to family prioritizes legacy, continuity, and
-                relationships. This is one of the most meaningful ways to
-                preserve your business&apos;s values, identity, and long-term
-                impact.
+                {pathContent.intro}
               </p>
               <p className="mt-5 text-meta font-medium text-text-primary">
                 Elements to a successful transition
               </p>
               <ul className="mt-2 list-disc space-y-1.5 pl-5 text-body text-text-secondary">
-                <li>Identifying the right successor(s)</li>
-                <li>Preserving harmony by aligning family and business</li>
-                <li>Navigating ownership, compensation, and governance</li>
+                {pathContent.elements.map((e) => (
+                  <li key={e}>{e}</li>
+                ))}
               </ul>
               <p className="mt-5 text-meta font-medium text-text-primary">
                 Key questions to consider
               </p>
               <ul className="mt-2 list-disc space-y-1.5 pl-5 text-body text-text-secondary">
-                <li>How will this impact family relationships?</li>
-                <li>Are your successors prepared for leadership?</li>
-                <li>How do you envision your role after the transition?</li>
-                <li>What is your plan for income and lifestyle post-exit?</li>
+                {pathContent.questions.map((q) => (
+                  <li key={q}>{q}</li>
+                ))}
               </ul>
             </section>
 
