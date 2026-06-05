@@ -27,6 +27,14 @@ import { createClient } from "@/lib/supabase/server";
 
 const SYSTEM_PROMPT = `You are a business valuation expert with deep knowledge of SMB financials across all industries. Generate realistic, conservative financial estimates a certified appraiser would consider plausible. Return ONLY valid JSON, no other text.`;
 
+// AI valuation estimation is accurate but adds a multi-second Anthropic
+// call to the first load of each module — too slow (and not yet trusted)
+// when an advisor creates a client live. Off by default: new clients get
+// instant, internally-consistent simulated financials (src/lib/simulate.ts).
+// Set ENABLE_AI_FINANCIALS=true to use the model. (The AI *business
+// description* is separate and always runs.)
+const AI_FINANCIALS_ENABLED = process.env.ENABLE_AI_FINANCIALS === "true";
+
 export type FinancialEstimates = {
   revenue_ttm: number;
   ebitda: number;
@@ -189,7 +197,7 @@ function deriveValuation(est: FinancialEstimates, ownershipPct: number) {
   const v_ebitda = est.ebitda * est.ebitda_multiple;
   const v_revenue = est.revenue_ttm * est.revenue_multiple;
   const v_income = (v_ebitda + v_revenue) / 2;
-  let valuation_estimate = Math.round((v_ebitda + v_revenue + v_income) / 3);
+  const valuation_estimate = Math.round((v_ebitda + v_revenue + v_income) / 3);
   let valuation_low = Math.round(valuation_estimate * 0.85);
   let valuation_high = Math.round(valuation_estimate * 1.15);
   let equity_value_owned = Math.round(
@@ -311,23 +319,25 @@ export async function ensureFinancials({
     (discoveryAnswers["industry_naics"] as string | null | undefined) ?? null;
 
   let estimates: FinancialEstimates | null = null;
-  try {
-    console.log(`[ensureFinancials ${caseId}] calling Anthropic`);
-    estimates = await callAnthropic({
-      businessName,
-      domain,
-      description,
-      naicsCode: naicsFromDiscovery,
-      employeeCount: employeeCount as number | string | null,
-      discoveryAnswers,
-    });
-    if (estimates) {
-      console.log(`[ensureFinancials ${caseId}] AI estimates received`);
-    } else {
-      console.warn(`[ensureFinancials ${caseId}] AI returned null; falling back to simulator`);
+  if (AI_FINANCIALS_ENABLED) {
+    try {
+      console.log(`[ensureFinancials ${caseId}] calling Anthropic`);
+      estimates = await callAnthropic({
+        businessName,
+        domain,
+        description,
+        naicsCode: naicsFromDiscovery,
+        employeeCount: employeeCount as number | string | null,
+        discoveryAnswers,
+      });
+      if (estimates) {
+        console.log(`[ensureFinancials ${caseId}] AI estimates received`);
+      } else {
+        console.warn(`[ensureFinancials ${caseId}] AI returned null; falling back to simulator`);
+      }
+    } catch (e) {
+      console.error(`[ensureFinancials ${caseId}] AI call threw`, e);
     }
-  } catch (e) {
-    console.error(`[ensureFinancials ${caseId}] AI call threw`, e);
   }
 
   let source: "ai" | "simulated" = "ai";

@@ -18,6 +18,12 @@ function formatUSD(n: number | null | undefined): string {
 
 type Risk = "low" | "moderate" | "high";
 
+// Severity colors. Green matches the valuation slider's gradient
+// (components/dashboard/valuation-scale-bar) so the two read as one system.
+const RISK_LOW = "#22C55E";
+const RISK_MOD = "#B45309";
+const RISK_HIGH = "#C0392B";
+
 const PATH_LABEL: Record<string, string> = {
   family: "Family transition",
   internal: "Internal transition",
@@ -42,6 +48,7 @@ export default async function DashboardPage() {
       .select(
         "id, created_at, client_business:client_businesses(business_name, domain, contact_name, primary_owner_name)",
       )
+      .is("deleted_at", null)
       .order("created_at", { ascending: false }),
     supabase
       .from("valuation_snapshots")
@@ -252,23 +259,20 @@ export default async function DashboardPage() {
         {/* Row 2 — risk + buy-sell */}
         <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Card title="Risk across the book">
+            {/* Low → high, left to right. Green matches the valuation slider. */}
             <div className="flex h-3 overflow-hidden rounded-full">
-              <Seg n={riskCounts.high} total={riskTotal} className="bg-danger-fg" />
-              <Seg
-                n={riskCounts.moderate}
-                total={riskTotal}
-                className="bg-warning-fg"
-              />
-              <Seg n={riskCounts.low} total={riskTotal} className="bg-green-400" />
+              <Seg n={riskCounts.low} total={riskTotal} color={RISK_LOW} />
+              <Seg n={riskCounts.moderate} total={riskTotal} color={RISK_MOD} />
+              <Seg n={riskCounts.high} total={riskTotal} color={RISK_HIGH} />
             </div>
             <div className="mt-4 grid grid-cols-3 gap-3">
-              <RiskLegend dot="bg-danger-fg" label="High" n={riskCounts.high} />
+              <RiskLegend color={RISK_LOW} label="Low" n={riskCounts.low} />
               <RiskLegend
-                dot="bg-warning-fg"
+                color={RISK_MOD}
                 label="Moderate"
                 n={riskCounts.moderate}
               />
-              <RiskLegend dot="bg-green-400" label="Low" n={riskCounts.low} />
+              <RiskLegend color={RISK_HIGH} label="High" n={riskCounts.high} />
             </div>
           </Card>
 
@@ -476,29 +480,35 @@ function Card({
 function Seg({
   n,
   total,
-  className,
+  color,
 }: {
   n: number;
   total: number;
-  className: string;
+  color: string;
 }) {
   if (n === 0) return null;
-  return <div className={className} style={{ width: `${(n / total) * 100}%` }} />;
+  return (
+    <div style={{ width: `${(n / total) * 100}%`, backgroundColor: color }} />
+  );
 }
 
 function RiskLegend({
-  dot,
+  color,
   label,
   n,
 }: {
-  dot: string;
+  color: string;
   label: string;
   n: number;
 }) {
   return (
     <div>
       <div className="flex items-center gap-1.5">
-        <span className={`h-2 w-2 rounded-full ${dot}`} aria-hidden />
+        <span
+          className="h-2 w-2 rounded-full"
+          style={{ backgroundColor: color }}
+          aria-hidden
+        />
         <span className="text-[12px] text-text-secondary">{label}</span>
       </div>
       <p className="mt-1 font-mono text-body font-semibold tabular-nums text-text-primary">

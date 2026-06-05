@@ -15,6 +15,43 @@ function normalizeDomain(input: string): string {
     .replace(/\/+$/, "");
 }
 
+// Soft-delete one or more clients (cases + their client_businesses). Sets
+// deleted_at rather than hard-deleting so the action is recoverable; the
+// clients list and dashboard filter on deleted_at is null. RLS scopes the
+// update to the advisor's own cases.
+export async function deleteCases(caseIds: string[]) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated.");
+
+  const ids = (caseIds ?? []).filter((id) => typeof id === "string" && id);
+  if (ids.length === 0) return;
+
+  const now = new Date().toISOString();
+  const { data: rows, error } = await supabase
+    .from("cases")
+    .update({ deleted_at: now })
+    .in("id", ids)
+    .is("deleted_at", null)
+    .select("client_business_id");
+  if (error) throw new Error(error.message);
+
+  const cbIds = (rows ?? [])
+    .map((r) => r.client_business_id as string | null)
+    .filter((v): v is string => Boolean(v));
+  if (cbIds.length > 0) {
+    await supabase
+      .from("client_businesses")
+      .update({ deleted_at: now })
+      .in("id", cbIds);
+  }
+
+  revalidatePath("/app");
+  revalidatePath("/app/cases");
+}
+
 export async function createCase(formData: FormData) {
   const supabase = await createClient();
 
