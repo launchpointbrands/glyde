@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import Image from "next/image";
 import {
   createAdvisorInvite,
   createSubentity,
@@ -271,7 +270,8 @@ function BrandLogo({ logoUrl, scope }: { logoUrl: string | null; scope: string }
     <div className="flex items-center gap-4">
       <div className="flex h-14 w-32 items-center justify-center rounded-md border border-border-subtle bg-bg-input">
         {logoUrl ? (
-          <Image src={logoUrl} alt="Logo" width={120} height={48} className="max-h-12 w-auto object-contain" unoptimized />
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={logoUrl} alt="Logo" className="max-h-12 w-auto object-contain" />
         ) : (
           <span className="text-eyebrow uppercase text-text-tertiary">No logo</span>
         )}
@@ -419,8 +419,9 @@ function BrandRow({
   return (
     <div className="flex items-center gap-3">
       {logo ? (
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border-subtle bg-bg-input">
-          <Image src={logo} alt="" width={36} height={36} className="max-h-8 w-auto object-contain" unoptimized />
+        <span className="flex h-9 w-auto max-w-[140px] shrink-0 items-center justify-center overflow-hidden rounded-md border border-border-subtle bg-bg-input px-1.5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logo} alt="" className="max-h-7 w-auto object-contain" />
         </span>
       ) : (
         <span

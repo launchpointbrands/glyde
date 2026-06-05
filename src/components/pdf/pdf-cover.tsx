@@ -1,5 +1,44 @@
-import { Image, Page, Text, View } from "@react-pdf/renderer";
+import { Circle, Line, Page, Path, Svg, Text, View } from "@react-pdf/renderer";
+import type { ReactElement } from "react";
 import { C, styles } from "./pdf-tokens";
+
+// Brand marks rendered as native react-pdf vectors (Svg), NOT raster
+// <Image> — react-pdf 4.x double-draws raster images on a page, so a
+// vector lockup (mark + name) is both reliable and crisp. Matched to the
+// brands set up in Settings → Organization & branding.
+function brandMark(name: string, color: string): ReactElement | null {
+  const key = (name || "").toLowerCase();
+  const box = { width: 34, height: 41 } as const;
+  if (key.includes("meridian")) {
+    return (
+      <Svg viewBox="0 0 124 150" style={box}>
+        <Circle cx="62" cy="75" r="50" stroke={color} strokeWidth="6" fill="none" />
+        <Line x1="18" y1="56" x2="106" y2="56" stroke={color} strokeWidth="5" />
+        <Line x1="12" y1="75" x2="112" y2="75" stroke={color} strokeWidth="5" />
+        <Line x1="18" y1="94" x2="106" y2="94" stroke={color} strokeWidth="5" />
+        <Path d="M62 25 C 34 50, 34 100, 62 125" stroke={color} strokeWidth="5" fill="none" />
+        <Path d="M62 25 C 90 50, 90 100, 62 125" stroke={color} strokeWidth="5" fill="none" />
+      </Svg>
+    );
+  }
+  if (key.includes("summit")) {
+    return (
+      <Svg viewBox="0 0 124 150" style={box}>
+        <Path d="M12 122 L46 44 L70 86 L88 56 L116 122 Z" fill={color} />
+        <Path d="M46 44 L54 62 L38 62 Z" fill="#FFFFFF" />
+      </Svg>
+    );
+  }
+  if (key.includes("harbor")) {
+    return (
+      <Svg viewBox="0 0 124 150" style={box}>
+        <Path d="M62 20 L76 60 L118 75 L76 90 L62 130 L48 90 L6 75 L48 60 Z" fill={color} />
+        <Circle cx="62" cy="75" r="9" fill="#FFFFFF" />
+      </Svg>
+    );
+  }
+  return null;
+}
 
 // Branding resolved for a report. Phase 1 sources this from the firm
 // (entity); Phase 2 will prefer the advisor's subentity when present.
@@ -36,6 +75,7 @@ export function PdfCover({
   preparedAt,
 }: CoverProps) {
   const accent = branding.primaryColor || C.green400;
+  const mark = brandMark(branding.name, accent);
   const disclosure =
     branding.disclosure ||
     `This report was prepared by ${advisorName} for the exclusive use of ${contactName} and ${businessName}. This document is confidential and intended solely for the recipient. It may not be reproduced, distributed, or shared without prior written consent.`;
@@ -52,13 +92,24 @@ export function PdfCover({
         color: C.textPrimary,
       }}
     >
-      {/* Brand lockup — entity/subentity logo, or its name. No WMGR logo. */}
-      {branding.logoUrl ? (
-        // eslint-disable-next-line jsx-a11y/alt-text
-        <Image
-          src={branding.logoUrl}
-          style={{ height: 40, maxWidth: 220, objectFit: "contain", marginBottom: 52 }}
-        />
+      {/* Brand lockup — vector mark + name (no WMGR logo, no raster image). */}
+      {mark ? (
+        <View
+          style={{ flexDirection: "row", alignItems: "center", marginBottom: 46 }}
+        >
+          {mark}
+          <Text
+            style={{
+              fontSize: 21,
+              fontWeight: 600,
+              letterSpacing: -0.2,
+              color: accent,
+              marginLeft: 11,
+            }}
+          >
+            {branding.name}
+          </Text>
+        </View>
       ) : (
         <Text
           style={{

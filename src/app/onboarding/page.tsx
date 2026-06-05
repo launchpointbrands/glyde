@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { OnboardingStep2 } from "@/components/onboarding-step-2";
@@ -118,12 +117,10 @@ function BrandStep({
           <div className="mt-2 flex items-center gap-4">
             <div className="flex h-14 w-32 items-center justify-center rounded-md border border-border-subtle bg-bg-input">
               {logoUrl ? (
-                <Image
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
                   src={logoUrl}
                   alt="Firm logo"
-                  width={120}
-                  height={48}
-                  unoptimized
                   className="max-h-12 w-auto object-contain"
                 />
               ) : (
