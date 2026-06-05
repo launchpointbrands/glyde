@@ -15,6 +15,7 @@ import {
 } from "@/components/dashboard/readiness-checklist";
 import { StatCard, StatCardHeading } from "@/components/dashboard/stat-card";
 import { ensureFinancials } from "@/lib/financials";
+import { recomputeSuccessionPlan } from "@/lib/plans";
 import { createClient } from "@/lib/supabase/server";
 
 const formatUSD = (n: number | null | undefined) => {
@@ -68,8 +69,12 @@ export default async function SuccessionPage({
 
   try {
     await ensureFinancials({ caseId });
+    await recomputeSuccessionPlan(caseId);
   } catch (e) {
-    console.error("ensureFinancials (succession) failed", e);
+    console.error(
+      "ensureFinancials/recomputeSuccessionPlan (succession) failed",
+      e,
+    );
   }
 
   const supabase = await createClient();
@@ -364,6 +369,15 @@ export default async function SuccessionPage({
 
 function humanizePriority(key: string): string {
   const KNOWN: Record<string, string> = {
+    control_timing_terms:
+      "Maintain control over the timing and terms of the exit",
+    preserve_mission_culture:
+      "Preserve the business mission, values, and culture",
+    maximize_financial_value: "Maximize the financial value of the exit",
+    take_care_of_employees: "Take care of employees and key staff",
+    keep_in_family: "Keep the business in the family",
+    minimize_taxes: "Minimize taxes on the transition",
+    // Legacy seeded keys
     maintain_family_ownership:
       "Maintain control over the timing and terms of the exit",
     preserve_operating_culture:

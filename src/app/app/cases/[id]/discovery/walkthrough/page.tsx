@@ -39,6 +39,22 @@ const TOOLTIPS: Record<string, string> = {
     "What share of total revenue comes from the two biggest customers. Buyers get nervous above 30%. Above 50% is a red flag.",
   revenue_recurring_pct:
     "Revenue that renews automatically — subscriptions, retainers, contracts. Higher recurring revenue commands a higher valuation multiple.",
+  revenue_renewing_pct:
+    "Revenue that tends to repeat but isn't locked by contract — re-orders and loyal repeat customers. More predictable than one-time, less than contractual.",
+  revenue_one_time_pct:
+    "One-off projects or transactions that won't repeat. A high share signals lumpier, less predictable revenue — buyers discount for it.",
+  wealth_net_proceeds_target:
+    "The after-tax cash the owner needs from a sale to fund the life they want. This anchors how much the business has to be worth at exit.",
+  wealth_exit_timeframe_years:
+    "How many years out the owner wants to exit. Drives the growth runway between today's value and the goal valuation.",
+  wealth_target_age:
+    "The age the owner wants to be at exit — a personal anchor that frames the timeline alongside the financial goal.",
+  wealth_goal_risk:
+    "The business-risk level worth reaching before exit. Lowering risk before a sale protects and often lifts the multiple.",
+  succession_path:
+    "How the owner pictures handing the business off — family, internal team, an outside buyer, or an ESOP. Shapes the whole transition plan.",
+  succession_priorities:
+    "What the owner cares about most in an exit. These priorities steer which transition structures fit and what trade-offs are acceptable.",
   top_vendor_revenue_pct:
     "How dependent the business is on one supplier. A single vendor supplying 25%+ of spend is a vulnerability buyers will flag in diligence.",
   financial_record_manager:
@@ -198,7 +214,10 @@ function SectionProgress({ currentQ }: { currentQ: number }) {
   };
 
   return (
-    <div className="grid grid-cols-5 gap-2">
+    <div
+      className="grid gap-2"
+      style={{ gridTemplateColumns: `repeat(${SECTIONS.length}, minmax(0, 1fr))` }}
+    >
       {SECTIONS.map((s) => {
         const state = sectionState(s, currentQ);
         return (

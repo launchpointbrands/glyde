@@ -20,6 +20,14 @@ const PATH_TITLE: Record<string, string> = {
 };
 
 const PRIORITY_LABEL: Record<string, string> = {
+  // Current discovery keys (succession_priorities choices)
+  control_timing_terms: "Maintain control over the timing and terms of the exit",
+  preserve_mission_culture: "Preserve the business mission, values, and culture",
+  maximize_financial_value: "Maximize the financial value of the exit",
+  take_care_of_employees: "Take care of employees and key staff",
+  keep_in_family: "Keep the business in the family",
+  minimize_taxes: "Minimize taxes on the transition",
+  // Legacy seeded keys (kept so older cases still render)
   maintain_family_ownership:
     "Maintain control over the timing and terms of the exit",
   preserve_operating_culture:

@@ -1,6 +1,6 @@
 "use client";
 
-import { Info } from "lucide-react";
+import { Check, Info } from "lucide-react";
 import { useState, useTransition } from "react";
 import { markSkipped, saveResponse } from "@/lib/discovery";
 import { ChoiceCard } from "./choice-card";
@@ -44,6 +44,16 @@ export function WalkthroughQuestion({
   const [draft, setDraft] = useState(initial);
   const [lastServer, setLastServer] = useState(initial);
 
+  // Multi-select (enum_multi) tracks an array of selected values. Keyed by
+  // a JSON string so the same not-while-pending reconciliation guards it
+  // against a background save's revalidate clobbering an in-flight toggle.
+  const initialMulti = Array.isArray(response?.value)
+    ? (response.value as string[])
+    : [];
+  const initialMultiKey = JSON.stringify(initialMulti);
+  const [multiDraft, setMultiDraft] = useState<string[]>(initialMulti);
+  const [lastServerMulti, setLastServerMulti] = useState(initialMultiKey);
+
   // Adopt the server-confirmed value only when no save is in flight, so an
   // earlier save's revalidate can't clobber a selection the advisor just
   // made (which would read as a flicker).
@@ -51,11 +61,15 @@ export function WalkthroughQuestion({
     setLastServer(initial);
     setDraft(initial);
   }
+  if (!pending && lastServerMulti !== initialMultiKey) {
+    setLastServerMulti(initialMultiKey);
+    setMultiDraft(initialMulti);
+  }
 
   const isAnswered = response?.status === "answered";
   const currentValue = isAnswered ? response.value : null;
 
-  function commit(value: string | number | null) {
+  function commit(value: string | number | string[] | null) {
     startTransition(() => {
       saveResponse(caseId, field.key, value).catch((e) =>
         console.error("saveResponse failed", e),
@@ -70,6 +84,16 @@ export function WalkthroughQuestion({
   function selectValue(value: string) {
     setDraft(value);
     commit(value);
+  }
+
+  // Optimistic toggle for multi-select: update the local array immediately,
+  // then persist the whole array in the background.
+  function toggleMulti(value: string) {
+    const next = multiDraft.includes(value)
+      ? multiDraft.filter((v) => v !== value)
+      : [...multiDraft, value];
+    setMultiDraft(next);
+    commit(next);
   }
 
   function skip() {
@@ -120,6 +144,41 @@ export function WalkthroughQuestion({
               onSelect={() => selectValue(c.value)}
             />
           ))}
+        </div>
+      )}
+
+      {field.input_type === "enum_multi" && (
+        <div className="space-y-2">
+          {field.choices?.map((c) => {
+            const checked = multiDraft.includes(c.value);
+            return (
+              <button
+                key={c.value}
+                type="button"
+                onClick={() => toggleMulti(c.value)}
+                aria-pressed={checked}
+                className={[
+                  "flex w-full items-center gap-3 rounded-md border px-4 py-3 text-left transition-colors",
+                  checked
+                    ? "border-green-400 bg-green-50"
+                    : "border-border-default bg-bg-input hover:border-border-strong",
+                ].join(" ")}
+              >
+                <span
+                  className={[
+                    "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors",
+                    checked
+                      ? "border-green-400 bg-green-400 text-text-inverse"
+                      : "border-border-default",
+                  ].join(" ")}
+                  aria-hidden
+                >
+                  {checked && <Check className="h-3 w-3" strokeWidth={3} />}
+                </span>
+                <span className="text-body text-text-primary">{c.label}</span>
+              </button>
+            );
+          })}
         </div>
       )}
 

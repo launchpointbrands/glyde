@@ -1,4 +1,4 @@
-// Walkthrough config — flat list of 11 single-question steps.
+// Walkthrough config — flat list of single-question steps.
 // One question per screen; field-to-step is 1:1 and used by the discovery
 // dashboard to deep-link a row click into the right step.
 
@@ -13,12 +13,20 @@ export const STEPS: WalkthroughStep[] = [
   { number: 3, fieldKey: "customer_count" },
   { number: 4, fieldKey: "top_2_customer_revenue_pct" },
   { number: 5, fieldKey: "revenue_recurring_pct" },
-  { number: 6, fieldKey: "owner_departure_impact" },
-  { number: 7, fieldKey: "key_employee_departure_impact" },
-  { number: 8, fieldKey: "top_vendor_revenue_pct" },
-  { number: 9, fieldKey: "financial_record_manager" },
-  { number: 10, fieldKey: "buy_sell_status" },
-  { number: 11, fieldKey: "buy_sell_last_reviewed" },
+  { number: 6, fieldKey: "revenue_renewing_pct" },
+  { number: 7, fieldKey: "revenue_one_time_pct" },
+  { number: 8, fieldKey: "owner_departure_impact" },
+  { number: 9, fieldKey: "key_employee_departure_impact" },
+  { number: 10, fieldKey: "top_vendor_revenue_pct" },
+  { number: 11, fieldKey: "financial_record_manager" },
+  { number: 12, fieldKey: "buy_sell_status" },
+  { number: 13, fieldKey: "buy_sell_last_reviewed" },
+  { number: 14, fieldKey: "wealth_net_proceeds_target" },
+  { number: 15, fieldKey: "wealth_exit_timeframe_years" },
+  { number: 16, fieldKey: "wealth_target_age" },
+  { number: 17, fieldKey: "wealth_goal_risk" },
+  { number: 18, fieldKey: "succession_path" },
+  { number: 19, fieldKey: "succession_priorities" },
 ];
 
 export const TOTAL_STEPS = STEPS.length;
@@ -32,10 +40,12 @@ export type WalkthroughSection = {
 
 export const SECTIONS: WalkthroughSection[] = [
   { label: "Business",   questionRange: [1, 2] },
-  { label: "Customers",  questionRange: [3, 5] },
-  { label: "Operations", questionRange: [6, 7] },
-  { label: "Risk",       questionRange: [8, 9] },
-  { label: "Protection", questionRange: [10, 11] },
+  { label: "Revenue",    questionRange: [3, 7] },
+  { label: "Operations", questionRange: [8, 9] },
+  { label: "Risk",       questionRange: [10, 11] },
+  { label: "Protection", questionRange: [12, 13] },
+  { label: "Goals",      questionRange: [14, 17] },
+  { label: "Succession", questionRange: [18, 19] },
 ];
 
 export type SectionState = "completed" | "current" | "upcoming";

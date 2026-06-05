@@ -5,6 +5,7 @@ import { SeverityHero } from "@/components/dashboard/severity-hero";
 import type { Severity } from "@/components/dashboard/severity-pill";
 import { StatCard, StatCardHeading } from "@/components/dashboard/stat-card";
 import { ensureFinancials } from "@/lib/financials";
+import { recomputeWealthPlan } from "@/lib/plans";
 import { createClient } from "@/lib/supabase/server";
 
 const formatUSD = (n: number | null | undefined) => {
@@ -27,30 +28,40 @@ export default async function WealthPage({
 
   try {
     await ensureFinancials({ caseId });
+    await recomputeWealthPlan(caseId);
   } catch (e) {
-    console.error("ensureFinancials (wealth) failed", e);
+    console.error("ensureFinancials/recomputeWealthPlan (wealth) failed", e);
   }
 
   const supabase = await createClient();
 
-  const [{ data: plan }, { data: valuation }] = await Promise.all([
-    supabase
-      .from("wealth_plans")
-      .select(
-        "net_proceeds_target, exit_year, target_age, goal_valuation, goal_ebitda, historic_avg_revenue_growth, goal_revenue_growth, current_risk, goal_risk, historic_ebitda_series",
-      )
-      .eq("case_id", caseId)
-      .order("computed_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from("valuation_snapshots")
-      .select("valuation_estimate, normalized_ebitda")
-      .eq("case_id", caseId)
-      .order("computed_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-  ]);
+  const [{ data: plan }, { data: valuation }, { data: readinessItems }, { data: readinessRef }] =
+    await Promise.all([
+      supabase
+        .from("wealth_plans")
+        .select(
+          "net_proceeds_target, exit_year, target_age, goal_valuation, goal_ebitda, historic_avg_revenue_growth, goal_revenue_growth, current_risk, goal_risk, historic_ebitda_series",
+        )
+        .eq("case_id", caseId)
+        .order("computed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("valuation_snapshots")
+        .select("valuation_estimate, normalized_ebitda")
+        .eq("case_id", caseId)
+        .order("computed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("readiness_items")
+        .select("item_key, category, is_complete")
+        .eq("case_id", caseId),
+      supabase
+        .from("readiness_item_reference")
+        .select("key, category")
+        .order("display_order"),
+    ]);
 
   if (!plan) {
     return <GeneratingReport title="Business Wealth Blueprint" />;
@@ -71,6 +82,32 @@ export default async function WealthPage({
   const yearsToExit = plan.exit_year
     ? plan.exit_year - new Date().getFullYear()
     : null;
+
+  // Exit readiness — same floored score the Succession report shows, so the
+  // two surfaces never disagree. Completed counts come from readiness_items;
+  // category membership from the reference list (covers items never toggled).
+  const completeByKey = new Map(
+    (readinessItems ?? []).map((r) => [
+      r.item_key as string,
+      Boolean(r.is_complete),
+    ]),
+  );
+  const readinessScore = (category: "personal" | "business", floor: number) => {
+    const keys = (readinessRef ?? []).filter((r) => r.category === category);
+    const total = keys.length;
+    if (total === 0) return floor;
+    const completed = keys.filter((r) =>
+      completeByKey.get(r.key as string),
+    ).length;
+    if (completed === 0) return floor;
+    const actual = (completed / total) * 100;
+    return Math.round(
+      (completed / total) * actual + ((total - completed) / total) * floor,
+    );
+  };
+  const exitReadiness = Math.round(
+    (readinessScore("personal", 40) + readinessScore("business", 30)) / 2,
+  );
 
   return (
     <main className="flex flex-1 flex-col px-5 pt-8 pb-12 md:px-10 md:pt-10 md:pb-16">
@@ -173,7 +210,7 @@ export default async function WealthPage({
                     Exit readiness
                   </p>
                   <p className="mt-2 inline-flex items-baseline gap-2 text-display font-light leading-none text-text-primary tabular-nums font-mono">
-                    46
+                    {exitReadiness}
                     <span className="text-meta font-normal text-text-secondary">
                       out of 100
                     </span>

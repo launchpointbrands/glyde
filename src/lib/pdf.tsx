@@ -19,6 +19,7 @@ import {
 } from "@/components/pdf/pdf-wealth";
 import { resolveBranding } from "@/lib/branding";
 import { ensureFinancials } from "@/lib/financials";
+import { recomputeSuccessionPlan, recomputeWealthPlan } from "@/lib/plans";
 import { evaluateRiskFactors } from "@/lib/risk";
 import { createClient } from "@/lib/supabase/server";
 
@@ -249,8 +250,9 @@ async function loadRiskData(caseId: string): Promise<RiskReportData> {
 async function loadWealthData(caseId: string): Promise<WealthReportData> {
   try {
     await ensureFinancials({ caseId });
+    await recomputeWealthPlan(caseId);
   } catch (e) {
-    console.error("ensureFinancials (pdf wealth) failed", e);
+    console.error("ensureFinancials/recomputeWealthPlan (pdf wealth) failed", e);
   }
 
   const ctx = await loadCommonContext(caseId);
@@ -309,8 +311,12 @@ async function loadSuccessionData(
 ): Promise<SuccessionReportData> {
   try {
     await ensureFinancials({ caseId });
+    await recomputeSuccessionPlan(caseId);
   } catch (e) {
-    console.error("ensureFinancials (pdf succession) failed", e);
+    console.error(
+      "ensureFinancials/recomputeSuccessionPlan (pdf succession) failed",
+      e,
+    );
   }
 
   const ctx = await loadCommonContext(caseId);

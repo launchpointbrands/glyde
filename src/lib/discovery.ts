@@ -1,10 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { recomputeSuccessionPlan, recomputeWealthPlan } from "@/lib/plans";
 import { evaluateRiskFactors } from "@/lib/risk";
 import { createClient } from "@/lib/supabase/server";
 
-type ResponseValue = string | number | null;
+type ResponseValue = string | number | string[] | null;
 
 async function requireAdvisor() {
   const supabase = await createClient();
@@ -19,14 +20,25 @@ function revalidateDiscovery(caseId: string) {
   revalidatePath(`/app/cases/${caseId}/discovery`);
 }
 
-// Re-evaluate risk factors from the latest discovery state. Wrapped in
-// try/catch so an evaluator failure can never block the discovery save
-// itself — the page-load lazy path will retry on next visit.
+// Re-derive everything that depends on discovery state: risk factors, and
+// the wealth/succession plans (goals + path + priorities). Each is wrapped
+// so a failure can never block the discovery save itself — the page-load
+// lazy paths retry on next visit.
 async function reevaluate(caseId: string) {
   try {
     await evaluateRiskFactors(caseId);
   } catch (e) {
     console.error("evaluateRiskFactors (discovery) failed", e);
+  }
+  try {
+    await recomputeWealthPlan(caseId);
+  } catch (e) {
+    console.error("recomputeWealthPlan (discovery) failed", e);
+  }
+  try {
+    await recomputeSuccessionPlan(caseId);
+  } catch (e) {
+    console.error("recomputeSuccessionPlan (discovery) failed", e);
   }
 }
 

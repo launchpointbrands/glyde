@@ -241,11 +241,23 @@ function evalFinancialPractice(value: unknown): Severity | null {
   return null;
 }
 
-function evalRevenueQuality(value: unknown): Severity | null {
-  if (typeof value !== "number") return null;
-  if (value < 20) return "high";
-  if (value < 40) return "moderate";
-  return "low";
+// Revenue quality blends the recurring share (predictable, contractual) with
+// the one-time share (lumpy, non-repeating). A strong recurring base can be
+// dragged down by a heavy one-time tail, so one-time can worsen — never
+// improve — the severity derived from recurring.
+function evalRevenueQuality(
+  recurring: unknown,
+  oneTime: unknown,
+): Severity | null {
+  if (typeof recurring !== "number") return null;
+  let sev: Severity =
+    recurring < 20 ? "high" : recurring < 40 ? "moderate" : "low";
+  if (typeof oneTime === "number") {
+    if (oneTime > 80) sev = "high";
+    else if (oneTime > 60 && sev === "low") sev = "moderate";
+    else if (oneTime > 60 && sev === "moderate") sev = "high";
+  }
+  return sev;
 }
 
 function evalBuySell(
@@ -342,10 +354,14 @@ export async function evaluateRiskFactors(caseId: string): Promise<void> {
   if (fpSev)
     factors.push(buildFactor("financial_practice", fpSev, fpVal, null));
 
-  // 6. revenue_quality
-  const rqVal = answered.get("revenue_recurring_pct");
-  const rqSev = evalRevenueQuality(rqVal);
-  if (rqSev) factors.push(buildFactor("revenue_quality", rqSev, rqVal, null));
+  // 6. revenue_quality — recurring base, worsened by a heavy one-time tail.
+  const recurringVal = answered.get("revenue_recurring_pct");
+  const oneTimeVal = answered.get("revenue_one_time_pct");
+  const rqSev = evalRevenueQuality(recurringVal, oneTimeVal);
+  if (rqSev)
+    factors.push(
+      buildFactor("revenue_quality", rqSev, recurringVal, oneTimeVal ?? null),
+    );
 
   // 7. buy_sell — combines two discovery fields into a single factor.
   const bsStatus = answered.get("buy_sell_status");
