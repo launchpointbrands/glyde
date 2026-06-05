@@ -1,5 +1,6 @@
 import { Document, Page, Text, View } from "@react-pdf/renderer";
 import { PdfCover, type ReportBranding } from "./pdf-cover";
+import { PdfDisclosures } from "./pdf-disclosures";
 import { PdfFooter } from "./pdf-footer";
 import { PdfHeader } from "./pdf-header";
 import { C, styles } from "./pdf-tokens";
@@ -71,6 +72,12 @@ export function PlaceholderDocument({
           </Text>
         </View>
       </Page>
+
+      <PdfDisclosures
+        contactName={contactName}
+        businessName={businessName}
+        branding={branding}
+      />
     </Document>
   );
 }
