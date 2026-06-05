@@ -125,6 +125,7 @@ export async function createCase(formData: FormData) {
   // make the estimates sharper.
 
   revalidatePath("/app");
+  revalidatePath("/app/cases");
   // Drop the advisor straight into the full-screen discovery questionnaire
   // instead of the processing animation — they answer (or skip) the
   // questions first, then the processing step crunches the analysis.

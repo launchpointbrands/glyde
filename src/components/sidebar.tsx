@@ -1,4 +1,4 @@
-import { Users } from "lucide-react";
+import { LayoutDashboard, Users } from "lucide-react";
 import { signOut } from "@/lib/auth";
 import { InviteButton } from "@/components/invite-button";
 import { SidebarLink } from "@/components/sidebar-link";
@@ -46,6 +46,12 @@ export async function Sidebar() {
       <nav className="mt-4 flex flex-col gap-0.5 px-2">
         <SidebarLink
           href="/app"
+          icon={<LayoutDashboard className="h-4 w-4" />}
+        >
+          Dashboard
+        </SidebarLink>
+        <SidebarLink
+          href="/app/cases"
           activeWhen={["/app/cases"]}
           icon={<Users className="h-4 w-4" />}
         >

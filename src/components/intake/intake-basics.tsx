@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { createCase } from "@/lib/cases";
@@ -31,12 +32,12 @@ export function IntakeBasics({ error }: { error?: string }) {
       <header className="flex items-center justify-between px-6 py-5 md:px-10">
         <Wordmark className="text-[20px] text-text-primary" />
         <IntakeProgress current={step} total={STEPS.length} />
-        <a
-          href="/app"
+        <Link
+          href="/app/cases"
           className="text-meta text-text-tertiary transition-colors hover:text-text-primary"
         >
           Exit
-        </a>
+        </Link>
       </header>
 
       <div className="flex flex-1 items-center justify-center px-6 pb-16">

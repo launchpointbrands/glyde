@@ -22,6 +22,7 @@ export async function seedDemoCase() {
 
   if (newCaseId) {
     revalidatePath("/app");
+    revalidatePath("/app/cases");
     redirect(`/app/cases/${newCaseId}/risk`);
   }
 
