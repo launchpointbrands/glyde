@@ -39,6 +39,7 @@ export default async function BrandingSettingsPage({
     .eq("id", user.id)
     .single();
   if (!me || me.role !== "firm_admin") redirect("/app/settings");
+  const meId = me.id as string;
 
   const [{ data: firm }, { data: subentities }, { data: advisors }, { data: invites }] =
     await Promise.all([
@@ -74,12 +75,35 @@ export default async function BrandingSettingsPage({
   const subName = (id: string | null) =>
     id ? subs.find((s) => s.id === id)?.name ?? "—" : "Firm (entity)";
 
+  // Group advisors by their home (subentity id, or null for entity-level)
+  // to drive the org hierarchy visual.
+  type AdvisorRow = {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    subentity_id: string | null;
+  };
+  const advisorList = (advisors ?? []) as AdvisorRow[];
+  const advisorsBySub = new Map<string | null, AdvisorRow[]>();
+  for (const a of advisorList) {
+    const key = (a.subentity_id as string | null) ?? null;
+    const arr = advisorsBySub.get(key) ?? [];
+    arr.push(a);
+    advisorsBySub.set(key, arr);
+  }
+  const entityAdvisors = advisorsBySub.get(null) ?? [];
+  const subsWithAdvisors = subs.map((s) => ({
+    sub: s,
+    advisors: advisorsBySub.get(s.id) ?? [],
+  }));
+  const totalAdvisors = advisorList.length;
+
   return (
     <main className="flex flex-1 flex-col items-center px-5 py-10 md:px-10">
       <div className="w-full max-w-2xl space-y-8">
         <div>
           <h1 className="text-page font-semibold text-text-primary">
-            Branding &amp; team
+            Organization &amp; branding
           </h1>
           <p className="mt-1 text-meta text-text-secondary">
             Reports are white-labeled with your brand. WMGR appears only as a
@@ -92,6 +116,16 @@ export default async function BrandingSettingsPage({
             {status}
           </p>
         ) : null}
+
+        <OrgHierarchy
+          firmName={firm?.name ?? "Your firm"}
+          firmColor={firm?.primary_color ?? null}
+          firmLogo={firm?.logo_url ?? null}
+          totalAdvisors={totalAdvisors}
+          entityAdvisors={entityAdvisors}
+          subsWithAdvisors={subsWithAdvisors}
+          meId={meId}
+        />
 
         {/* Entity branding */}
         <Section title="Firm brand (entity)" subtitle="Used on reports for advisors not assigned to a subentity.">
@@ -283,5 +317,158 @@ function SaveButton({ children }: { children: React.ReactNode }) {
     <button type="submit" className="shrink-0 rounded-md bg-green-400 px-3.5 py-2 text-meta font-medium text-text-inverse transition-colors hover:bg-green-600">
       {children}
     </button>
+  );
+}
+
+// --- Organization hierarchy visual ----------------------------------------
+
+type OrgAdvisor = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  subentity_id: string | null;
+};
+
+function OrgHierarchy({
+  firmName,
+  firmColor,
+  firmLogo,
+  totalAdvisors,
+  entityAdvisors,
+  subsWithAdvisors,
+  meId,
+}: {
+  firmName: string;
+  firmColor: string | null;
+  firmLogo: string | null;
+  totalAdvisors: number;
+  entityAdvisors: OrgAdvisor[];
+  subsWithAdvisors: { sub: Subentity; advisors: OrgAdvisor[] }[];
+  meId: string;
+}) {
+  return (
+    <section className="rounded-[10px] border border-border-subtle bg-bg-card px-6 py-5 shadow-card">
+      <h2 className="text-section font-semibold text-text-primary">Organization</h2>
+      <p className="mt-1 text-meta text-text-secondary">
+        Entity → optional sub-brands (1099s) → advisors. Each advisor&apos;s
+        reports carry their sub-brand, or the entity brand if they aren&apos;t
+        in one.
+      </p>
+
+      <div className="mt-5">
+        {/* Entity */}
+        <BrandRow
+          color={firmColor}
+          logo={firmLogo}
+          name={firmName}
+          tag="Entity"
+          meta={`${totalAdvisors} ${totalAdvisors === 1 ? "advisor" : "advisors"} · ${subsWithAdvisors.length} ${subsWithAdvisors.length === 1 ? "sub-brand" : "sub-brands"}`}
+        />
+
+        {/* Children: subentities + entity-level advisors */}
+        <div className="mt-4 space-y-5 border-l-2 border-border-subtle pl-5">
+          {subsWithAdvisors.map(({ sub, advisors }) => (
+            <div key={sub.id}>
+              <BrandRow
+                color={sub.primary_color}
+                logo={sub.logo_url}
+                name={sub.name}
+                tag="Sub-brand · 1099"
+                meta={`${advisors.length} ${advisors.length === 1 ? "advisor" : "advisors"}`}
+              />
+              <AdvisorChips
+                advisors={advisors}
+                meId={meId}
+                empty="No advisors assigned yet."
+              />
+            </div>
+          ))}
+
+          <div>
+            <p className="text-meta font-medium text-text-primary">
+              On the entity brand
+            </p>
+            <p className="text-[12px] text-text-tertiary">
+              Reports carry {firmName}.
+            </p>
+            <AdvisorChips
+              advisors={entityAdvisors}
+              meId={meId}
+              empty="None — every advisor is in a sub-brand."
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function BrandRow({
+  color,
+  logo,
+  name,
+  tag,
+  meta,
+}: {
+  color: string | null;
+  logo: string | null;
+  name: string;
+  tag: string;
+  meta: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      {logo ? (
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border-subtle bg-bg-input">
+          <Image src={logo} alt="" width={36} height={36} className="max-h-8 w-auto object-contain" unoptimized />
+        </span>
+      ) : (
+        <span
+          className="h-9 w-9 shrink-0 rounded-md border border-border-subtle"
+          style={{ backgroundColor: color ?? "#E8EDE8" }}
+          aria-hidden
+        />
+      )}
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="truncate text-meta font-semibold text-text-primary">{name}</p>
+          <span className="shrink-0 rounded-full border border-border-subtle bg-bg-page px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
+            {tag}
+          </span>
+        </div>
+        <p className="text-[12px] text-text-secondary">{meta}</p>
+      </div>
+    </div>
+  );
+}
+
+function AdvisorChips({
+  advisors,
+  meId,
+  empty,
+}: {
+  advisors: OrgAdvisor[];
+  meId: string;
+  empty: string;
+}) {
+  if (advisors.length === 0) {
+    return <p className="mt-2 text-[12px] text-text-tertiary">{empty}</p>;
+  }
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {advisors.map((a) => (
+        <span
+          key={a.id}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border-subtle bg-bg-page px-2.5 py-1 text-[12px] text-text-primary"
+        >
+          {a.full_name ?? a.email ?? "Advisor"}
+          {a.id === meId ? (
+            <span className="rounded-full bg-green-400 px-1.5 text-[10px] font-medium text-text-inverse">
+              you
+            </span>
+          ) : null}
+        </span>
+      ))}
+    </div>
   );
 }

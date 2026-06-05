@@ -48,10 +48,10 @@ export default async function SettingsPage() {
           >
             <span>
               <span className="block text-meta font-medium text-text-primary">
-                Branding &amp; team
+                Organization &amp; branding
               </span>
               <span className="block text-meta text-text-secondary">
-                White-label your reports, manage subentities, and invite advisors.
+                See your entity, sub-brands, and advisors — white-label reports and invite your team.
               </span>
             </span>
             <span className="text-green-600">→</span>
