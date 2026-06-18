@@ -86,13 +86,6 @@ export default function ProcessingPage() {
           aria-hidden
         />
       </div>
-
-      <style jsx global>{`
-        @keyframes wmgr-fadein {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-      `}</style>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Square avatar with a three-stage logo cascade:
 //   clearbit → google favicon → initials.
@@ -10,6 +10,10 @@ import { useState } from "react";
 // is the last-resort branded surface.
 
 type Stage = "clearbit" | "favicon" | "initials";
+
+function nextStage(s: Stage): Stage {
+  return s === "clearbit" ? "favicon" : "initials";
+}
 
 function initialsFor(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -30,6 +34,20 @@ export function ClientAvatar({
 }) {
   const [stage, setStage] = useState<Stage>(domain ? "clearbit" : "initials");
   const isInitials = stage === "initials";
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  // An <img> that fails to load *before* React hydrates never fires its
+  // onError (the handler attaches too late), which strands a broken logo —
+  // common on localhost or for fake/unindexed domains where the request
+  // fails near-instantly. On mount and on each stage change, detect an
+  // already-failed image and advance the cascade ourselves. The inline
+  // onError handlers still cover failures that happen after hydration.
+  useEffect(() => {
+    const img = imgRef.current;
+    if (img && img.complete && img.naturalWidth === 0) {
+      setStage((s) => (s === "initials" ? s : nextStage(s)));
+    }
+  }, [stage]);
 
   return (
     <div
@@ -42,6 +60,7 @@ export function ClientAvatar({
       {stage === "clearbit" && domain && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
+          ref={imgRef}
           src={`https://logo.clearbit.com/${encodeURIComponent(domain)}`}
           alt=""
           className="h-full w-full object-cover"
@@ -51,6 +70,7 @@ export function ClientAvatar({
       {stage === "favicon" && domain && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
+          ref={imgRef}
           src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(
             domain,
           )}&sz=64`}
